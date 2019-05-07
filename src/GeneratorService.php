@@ -6,6 +6,7 @@ namespace Del\Generator;
 
 use Exception;
 use Nette\PhpGenerator\ClassType;
+use Nette\PhpGenerator\Method;
 use Nette\PhpGenerator\PhpNamespace;
 use Nette\PhpGenerator\PsrPrinter;
 
@@ -67,7 +68,27 @@ class GeneratorService
     private function createEntity(string $nameSpace, string $entityName, array $fields): PhpNamespace
     {
         $namespace = new PhpNamespace($nameSpace);
+        $namespace->addUse('Doctrine\ORM\Mapping', 'ORM');
         $class = new ClassType($entityName);
+        $class->addComment('@ORM\Entity');
+
+        $id = $class->addProperty('id');
+        $id->setVisibility('private');
+        $id->addComment('@var int $id');
+        $id->addComment('@ORM\Id');
+        $id->addComment('@ORM\Column(type="integer")');
+        $id->addComment('@ORM\GeneratedValue');
+
+        $method = $class->addMethod('getId');
+        $method->setBody('return $this->id;');
+        $method->addComment('@return int');
+
+        $method = $class->addMethod('setId');
+        $method->addParameter('id');
+        $method->addComment('@param int $id');
+        $method->setBody('$this->id = $id;');
+
+
         $namespace->add($class);
 
         return $namespace;

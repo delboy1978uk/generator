@@ -36,7 +36,8 @@ class GeneratorCommand extends Command
     /**
      * @param InputInterface $input
      * @param OutputInterface $output
-     * @throws \Doctrine\ORM\OptimisticLockException
+     * @return int|void|null
+     * @throws \Exception
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
