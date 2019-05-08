@@ -28,6 +28,7 @@ class GeneratorService
         $this->createEntity($nameSpace, $entityName, $fields);
         $this->createRepository($nameSpace, $entityName);
         $this->createCollection($nameSpace, $entityName);
+        $this->createService($nameSpace, $entityName, $fields);
 
         return $this->buildId;
     }
@@ -151,7 +152,7 @@ class GeneratorService
             $method = $class->addMethod('get' . ucfirst($name));
             $method->setBody('return $this->' . $name . ';');
             $method->addComment('@return ' . $var);
-            $method->setReturnType( $var);
+            $method->setReturnType($var);
             $method->setReturnNullable();
 
             $method = $class->addMethod('set' . ucfirst($name));
@@ -159,7 +160,7 @@ class GeneratorService
             $method->addComment('@param ' . $var . ' $' . $name);
             $method->setBody('$this->' . $name . ' = $' . $name . ';');
         }
-
+        reset($fields);
 
         $namespace->add($class);
 
@@ -182,12 +183,33 @@ class GeneratorService
         $class = new ClassType($entityName . 'Repository');
         $class->addExtend('Doctrine\ORM\EntityRepository');
         $namespace->add($class);
+        $name = lcfirst($entityName);
+
+        $method = $class->addMethod('save');
+        $method->addParameter($name)->setTypeHint($nameSpace . '\\Entity\\' . $entityName);
+        $method->setBody('if(!$' . $name . '->getID()) {
+    $this->_em->persist($' . $name . ');
+}
+$this->_em->flush($' . $name . ');
+return $' . $name . ';');
+        $method->addComment('@param ' . $entityName . ' $' . $name);
+        $method->addComment('@return $' . $name);
+        $method->addComment('@throws \Doctrine\ORM\OptimisticLockException');
+
+        $method = $class->addMethod('delete');
+        $method->addParameter($name)->setTypeHint($nameSpace . '\\Entity\\' . $entityName);
+        $method->setBody('$this->_em->remove($'. $name . ');
+$this->_em->flush($'. $name . ');');
+        $method->addComment('@param ' . $entityName . ' $' . $name);
+        $method->addComment('@throws \Doctrine\ORM\OptimisticLockException');
 
         $printer = new PsrPrinter();
         $code = "<?php\n\n" . $printer->printNamespace($namespace);
         file_put_contents('build/' . $this->buildId . '/src/Repository/' . $entityName . 'Repository.php', $code);
 
         return true;
+
+
     }
 
     /**
@@ -262,6 +284,96 @@ return false;');
         $printer = new PsrPrinter();
         $code = "<?php\n\n" . $printer->printNamespace($namespace);
         file_put_contents('build/' . $this->buildId . '/src/Collection/' . $entityName . 'Collection.php', $code);
+
+        return true;
+    }
+
+    /**
+     * @param string $nameSpace
+     * @param string $entityName
+     * @param array $fields
+     * @return bool
+     */
+    private function createService(string $nameSpace, string $entityName, array $fields): bool
+    {
+        $namespace = new PhpNamespace($nameSpace . '\\Service');
+        $namespace->addUse($nameSpace . '\\Entity\\' . $entityName);
+        $namespace->addUse($nameSpace . '\\Repository\\' . $entityName . 'Repository');
+        $namespace->addUse('Doctrine\ORM\EntityManager');
+        $namespace->addUse('Pimple\Container');
+        $class = new ClassType($entityName . 'Service');
+        $namespace->add($class);
+        $name = lcfirst($entityName);
+
+        $prop = $class->addProperty('em');
+        $prop->setVisibility('private');
+        $prop->addComment('@var EntityManager $em');
+
+
+        // constructor
+        $method = $class->addMethod('__construct');
+        $method->addParameter('c')->setTypeHint('Pimple\Container');
+        $method->setBody('$this->em = $c[\'doctrine.entity_manager\'];');
+        $method->addComment('@param Container $c');
+
+        // createFromArray
+        $method = $class->addMethod('createFromArray');
+        $method->addParameter('data')->setTypeHint('array');
+        $body = '$' . $name . ' = new ' . $entityName . '();' . "\n";
+        $body .= 'isset($data[\'id\']) ? $' . $name . '->setId($data[\'id\']) : null;' . "\n";
+        foreach ($fields as $field) {
+            $body .= 'isset($data[\'' . $field['name'] . '\']) ? $' . $name . '->set' . ucfirst($field['name']) . '($data[\'' . $field['name'] . '\']) : null;' . "\n";
+        }
+        reset($fields);
+        $body .= "\nreturn $" . $name . ';';
+        $method->setBody($body);
+        $method->addComment('@param array $data');
+        $method->addComment('@return $' . $entityName);
+
+        // toArray()
+        $method = $class->addMethod('toArray');
+        $method->addParameter($name)->setTypeHint($nameSpace . '\\Entity\\' . $entityName);
+        $body = '$data = [' . "\n";
+        $body .= "    'id' => $" . $name . "->getId(),\n";
+        foreach ($fields as $field) {
+            $body .= "    '{$field['name']}' => $" . $name . "->get" . ucfirst($field['name']) . "(),\n";
+        }
+        reset($fields);
+        $body .= "];\n\nreturn " . '$data;';
+        $method->setBody($body);
+        $method->addComment('@param ' . $entityName . ' $' . $name);
+        $method->addComment('@return array');
+
+
+        // save
+        $method = $class->addMethod('save' . $entityName);
+        $method->addParameter($name)->setTypeHint($nameSpace . '\\Entity\\' . $entityName);
+        $method->setBody('return $this->getRepository()->save($' . $name . ');');
+        $method->addComment('@param ' . $entityName . ' $' . $name);
+        $method->addComment('@return ' . $entityName );
+        $method->addComment('@throws \Doctrine\ORM\OptimisticLockException');
+        $method->setReturnType($nameSpace . '\\Entity\\' . $entityName);
+
+
+        // delete
+        $method = $class->addMethod('delete' . $entityName);
+        $method->addParameter($name)->setTypeHint($nameSpace . '\\Entity\\' . $entityName);
+        $method->setBody('return $this->getRepository()->delete($' . $name . ');');
+        $method->addComment('@param ' . $entityName . ' $' . $name);
+        $method->addComment('@throws \Doctrine\ORM\OptimisticLockException');
+
+        // getRepository
+        $method = $class->addMethod('getRepository');
+        $method->setBody('return $this->em->getRepository(\'' . $nameSpace . '\\Entity\\' . $entityName . '\');');
+        $method->addComment('@return ' . $entityName . 'Repository');
+        $method->setReturnType($nameSpace . '\\Repository\\' . $entityName . 'Repository');
+
+
+
+
+        $printer = new PsrPrinter();
+        $code = "<?php\n\n" . $printer->printNamespace($namespace);
+        file_put_contents('build/' . $this->buildId . '/src/Service/' . $entityName . 'Service.php', $code);
 
         return true;
     }

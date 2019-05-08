@@ -61,7 +61,7 @@ class GeneratorCommand extends Command
             $question = new Question('Enter the name of the field: ');
             $field['name'] = $this->helper->ask($input, $output, $question);
 
-            $question = new ChoiceQuestion('What type of data does it hold?', [
+            $question = new ChoiceQuestion('What type of data does it hold? ', [
                 'date', 'datetime', 'decimal', 'double', 'float', 'int', 'varchar', 'bool'
             ]);
             $field['type'] = $this->helper->ask($input, $output, $question);
@@ -73,7 +73,7 @@ class GeneratorCommand extends Command
                 case 'float':
                 case 'int':
                 case 'varchar':
-                    $question = new Question('What length is the field?');
+                    $question = new Question('What length is the field? ');
                     $field['length'] = $this->helper->ask($input, $output, $question);
                     break;
                 default:
@@ -91,6 +91,7 @@ class GeneratorCommand extends Command
             $fields[] = $field;
 
             $question = new ConfirmationQuestion('Create another field? (Y/n)', true);
+            $output->writeln('');
         }
 
 
