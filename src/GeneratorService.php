@@ -151,7 +151,8 @@ class GeneratorService
             $method = $class->addMethod('get' . ucfirst($name));
             $method->setBody('return $this->' . $name . ';');
             $method->addComment('@return ' . $var);
-            $method->setReturnType('?' . $var);
+            $method->setReturnType( $var);
+            $method->setReturnNullable();
 
             $method = $class->addMethod('set' . ucfirst($name));
             $method->addParameter($name)->setTypeHint($typeHint);
