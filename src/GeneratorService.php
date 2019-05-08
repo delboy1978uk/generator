@@ -29,6 +29,7 @@ class GeneratorService
         $this->createRepository($nameSpace, $entityName);
         $this->createCollection($nameSpace, $entityName);
         $this->createService($nameSpace, $entityName, $fields);
+        $this->createPackage($nameSpace, $entityName);
 
         return $this->buildId;
     }
@@ -180,6 +181,7 @@ class GeneratorService
     {
         $namespace = new PhpNamespace($nameSpace . '\\Repository');
         $namespace->addUse('Doctrine\ORM\EntityRepository');
+        $namespace->addUse($nameSpace . '\\Entity\\' . $entityName);
         $class = new ClassType($entityName . 'Repository');
         $class->addExtend('Doctrine\ORM\EntityRepository');
         $namespace->add($class);
@@ -300,7 +302,6 @@ return false;');
         $namespace->addUse($nameSpace . '\\Entity\\' . $entityName);
         $namespace->addUse($nameSpace . '\\Repository\\' . $entityName . 'Repository');
         $namespace->addUse('Doctrine\ORM\EntityManager');
-        $namespace->addUse('Pimple\Container');
         $class = new ClassType($entityName . 'Service');
         $namespace->add($class);
         $name = lcfirst($entityName);
@@ -312,9 +313,9 @@ return false;');
 
         // constructor
         $method = $class->addMethod('__construct');
-        $method->addParameter('c')->setTypeHint('Pimple\Container');
-        $method->setBody('$this->em = $c[\'doctrine.entity_manager\'];');
-        $method->addComment('@param Container $c');
+        $method->addParameter('em')->setTypeHint('Doctrine\ORM\EntityManager');
+        $method->setBody('$this->em = $em;');
+        $method->addComment('@param EntityManager $em');
 
         // createFromArray
         $method = $class->addMethod('createFromArray');
@@ -364,16 +365,59 @@ return false;');
 
         // getRepository
         $method = $class->addMethod('getRepository');
-        $method->setBody('return $this->em->getRepository(\'' . $nameSpace . '\\Entity\\' . $entityName . '\');');
+        $method->setBody('/** @var \\' . $nameSpace . '\Repository\\' . $entityName . 'Repository $repository */
+$repository = $this->em->getRepository(' .  $entityName . '::class);
+
+return $repository;');
         $method->addComment('@return ' . $entityName . 'Repository');
         $method->setReturnType($nameSpace . '\\Repository\\' . $entityName . 'Repository');
-
-
 
 
         $printer = new PsrPrinter();
         $code = "<?php\n\n" . $printer->printNamespace($namespace);
         file_put_contents('build/' . $this->buildId . '/src/Service/' . $entityName . 'Service.php', $code);
+
+        return true;
+    }
+
+    /**
+     * @param string $nameSpace
+     * @param string $entityName
+     * @param array $fields
+     * @return bool
+     */
+    private function createPackage(string $nameSpace, string $entityName): bool
+    {
+        $namespace = new PhpNamespace($nameSpace);
+        $namespace->addUse($nameSpace . '\\Service\\' . $entityName . 'Service');
+        $namespace->addUse('Del\Common\Container\RegistrationInterface');
+        $namespace->addUse('Doctrine\ORM\EntityManager');
+        $namespace->addUse('Pimple\Container');
+        $class = new ClassType($entityName . 'Package');
+        $class->addImplement('Del\Common\Container\RegistrationInterface');
+        $namespace->add($class);
+
+        // add to container
+        $method = $class->addMethod('addToContainer');
+        $method->addParameter('c')->setTypeHint('Pimple\Container');
+        $method->setBody('/** @var EntityManager $em */
+$em = $c[\'doctrine.entity_manager\'];
+$c[\'service.' . $entityName . '\'] = new ' . $entityName . 'Service($em);');
+        $method->addComment('@param Container $c');
+
+        // getEntityPath
+        $method = $class->addMethod('getEntityPath');
+        $method->setBody("return 'build/" . $this->buildId . "/src/Entity';");
+        $method->addComment('@return string');
+
+        // getEntityPath
+        $method = $class->addMethod('hasEntityPath');
+        $method->setBody("return true;");
+        $method->addComment('@return bool');
+
+        $printer = new PsrPrinter();
+        $code = "<?php\n\n" . $printer->printNamespace($namespace);
+        file_put_contents('build/' . $this->buildId . '/src/' . $entityName . 'Package.php', $code);
 
         return true;
     }
