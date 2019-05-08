@@ -7,6 +7,7 @@ require_once './vendor/autoload.php';
 
 use Del\Common\ContainerService;
 use Del\Common\Config\DbCredentials;
+use Del\Generator\ClearBuildsCommand;
 use Del\Generator\GeneratorCommand;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Helper\HelperSet;
@@ -18,8 +19,10 @@ $credentials = new DbCredentials($dbConfig['db']);
 $helperSet = new HelperSet();
 $helperSet->set(new QuestionHelper());
 $generatorCommand = new GeneratorCommand();
+$clearCommand = new ClearBuildsCommand();
 
 $app = new Application('Entity Generator');
 $app->setHelperSet($helperSet);
 $app->add($generatorCommand);
+$app->add($clearCommand);
 $app->run();

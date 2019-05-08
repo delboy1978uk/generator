@@ -26,6 +26,8 @@ class GeneratorService
     {
         $this->createBuildFolders();
         $this->createEntity($nameSpace, $entityName, $fields);
+        $this->createRepository($nameSpace, $entityName);
+        $this->createCollection($nameSpace, $entityName);
 
         return $this->buildId;
     }
@@ -64,10 +66,10 @@ class GeneratorService
      */
     private function createEntity(string $nameSpace, string $entityName, array $fields): bool
     {
-        $namespace = new PhpNamespace($nameSpace);
+        $namespace = new PhpNamespace($nameSpace . '\\Entity');
         $namespace->addUse('Doctrine\ORM\Mapping', 'ORM');
         $class = new ClassType($entityName);
-        $class->addComment('@ORM\Entity(repositoryClass="\\' . $nameSpace . '\Repository\\' . $entityName  . 'Repository")');
+        $class->addComment('@ORM\Entity(repositoryClass="\\' . $nameSpace . '\Repository\\' . $entityName . 'Repository")');
 
         $id = $class->addProperty('id');
         $id->setVisibility('private');
@@ -149,11 +151,11 @@ class GeneratorService
             $method = $class->addMethod('get' . ucfirst($name));
             $method->setBody('return $this->' . $name . ';');
             $method->addComment('@return ' . $var);
-            $method->setReturnType($var);
+            $method->setReturnType('?' . $var);
 
             $method = $class->addMethod('set' . ucfirst($name));
             $method->addParameter($name)->setTypeHint($typeHint);
-            $method->addComment('@param ' . $var . ' $' .$name);
+            $method->addComment('@param ' . $var . ' $' . $name);
             $method->setBody('$this->' . $name . ' = $' . $name . ';');
         }
 
@@ -163,6 +165,102 @@ class GeneratorService
         $printer = new PsrPrinter();
         $code = "<?php\n\n" . $printer->printNamespace($namespace);
         file_put_contents('build/' . $this->buildId . '/src/Entity/' . $entityName . '.php', $code);
+
+        return true;
+    }
+
+    /**
+     * @param string $nameSpace
+     * @param string $entityName
+     * @return bool
+     */
+    private function createRepository(string $nameSpace, string $entityName): bool
+    {
+        $namespace = new PhpNamespace($nameSpace . '\\Repository');
+        $namespace->addUse('Doctrine\ORM\EntityRepository');
+        $class = new ClassType($entityName . 'Repository');
+        $class->addExtend('Doctrine\ORM\EntityRepository');
+        $namespace->add($class);
+
+        $printer = new PsrPrinter();
+        $code = "<?php\n\n" . $printer->printNamespace($namespace);
+        file_put_contents('build/' . $this->buildId . '/src/Repository/' . $entityName . 'Repository.php', $code);
+
+        return true;
+    }
+
+    /**
+     * @param string $nameSpace
+     * @param string $entityName
+     * @return bool
+     */
+    private function createCollection(string $nameSpace, string $entityName): bool
+    {
+        $namespace = new PhpNamespace($nameSpace . '\\Collection');
+        $namespace->addUse($nameSpace . '\\Entity\\' . $entityName);
+        $namespace->addUse('Doctrine\Common\Collections\ArrayCollection');
+        $namespace->addUse('LogicException');
+        $class = new ClassType($entityName . 'Collection');
+        $class->addExtend('Doctrine\Common\Collections\ArrayCollection');
+        $namespace->add($class);
+        $name = lcfirst($entityName);
+
+        $method = $class->addMethod('update');
+        $method->addParameter($name)->setTypeHint($nameSpace . '\\Entity\\' . $entityName);
+        $method->setBody('$key = $this->findKey($' . $name . ');
+if($key) {
+    $this->offsetSet($key,$' . $name . ');
+    return $this;
+}
+throw new LogicException(\'' . $entityName . ' was not in the collection.\');');
+        $method->addComment('@param ' . $entityName . ' $' . $name);
+        $method->addComment('@return $this');
+        $method->addComment('@throws LogicException');
+
+
+        $method = $class->addMethod('append');
+        $method->addParameter($name)->setTypeHint($nameSpace . '\\Entity\\' . $entityName);
+        $method->setBody('$this->add($' . $name . ');');
+        $method->addComment('@param ' . $entityName . ' $' . $name);
+
+
+        $method = $class->addMethod('current');
+        $method->setBody('return parent::current();');
+        $method->addComment('@return ' . $entityName . '|null');
+
+        $method = $class->addMethod('findKey');
+        $method->addParameter($name)->setTypeHint($nameSpace . '\\Entity\\' . $entityName);
+        $method->setBody('$it = $this->getIterator();
+$it->rewind();
+while($it->valid()) {
+    if($it->current()->getId() == $' . $name . '->getId()) {
+        return $it->key();
+    }
+    $it->next();
+}
+return false;');
+        $method->addComment('@param ' . $entityName . ' $' . $name);
+        $method->addComment('@return bool|int');
+
+
+        $method = $class->addMethod('findById');
+        $method->addParameter('id')->setTypeHint('int');
+        $method->setBody('$it = $this->getIterator();
+$it->rewind();
+while($it->valid()) {
+    if($it->current()->getId() == $id) {
+        return $it->current();
+    }
+    $it->next();
+}
+return false;');
+        $method->addComment('@param int $id');
+        $method->addComment('@return ' . $entityName . '|bool');
+
+
+        $printer = new PsrPrinter();
+        $code = "<?php\n\n" . $printer->printNamespace($namespace);
+        file_put_contents('build/' . $this->buildId . '/src/Collection/' . $entityName . 'Collection.php', $code);
 
         return true;
     }
