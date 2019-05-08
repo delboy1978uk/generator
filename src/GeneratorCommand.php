@@ -62,7 +62,7 @@ class GeneratorCommand extends Command
             $field['name'] = $this->helper->ask($input, $output, $question);
 
             $question = new ChoiceQuestion('What type of data does it hold?', [
-                'date', 'datetime', 'decimal', 'double', 'float', 'int', 'varchar'
+                'date', 'datetime', 'decimal', 'double', 'float', 'int', 'varchar', 'bool'
             ]);
             $field['type'] = $this->helper->ask($input, $output, $question);
 
@@ -84,6 +84,9 @@ class GeneratorCommand extends Command
                 $question = new Question('How many decimal places for your ' . $field['type'] . '?');
                 $field['decimals'] = $this->helper->ask($input, $output, $question);
             }
+
+            $question = new ConfirmationQuestion('Is the field nullable?  (Y/n)', true);
+            $field['nullable'] = $this->helper->ask($input, $output, $question);
 
             $fields[] = $field;
 

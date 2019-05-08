@@ -25,10 +25,7 @@ class GeneratorService
     public function createEntityModule(string $nameSpace, string $entityName, array $fields): string
     {
         $this->createBuildFolders();
-        $generated = $this->createEntity($nameSpace, $entityName, $fields);
-        $printer = new PsrPrinter();
-        $code = "<?php\n\n" . $printer->printNamespace($generated);
-        file_put_contents('build/' . $this->buildId . '/src/Entity/' . $entityName . '.php', $code);
+        $this->createEntity($nameSpace, $entityName, $fields);
 
         return $this->buildId;
     }
@@ -63,14 +60,14 @@ class GeneratorService
      * @param string $nameSpace
      * @param string $entityName
      * @param array $fields
-     * @return PhpNamespace
+     * @return bool
      */
-    private function createEntity(string $nameSpace, string $entityName, array $fields): PhpNamespace
+    private function createEntity(string $nameSpace, string $entityName, array $fields): bool
     {
         $namespace = new PhpNamespace($nameSpace);
         $namespace->addUse('Doctrine\ORM\Mapping', 'ORM');
         $class = new ClassType($entityName);
-        $class->addComment('@ORM\Entity');
+        $class->addComment('@ORM\Entity(repositoryClass="\\' . $nameSpace . '\Repository\\' . $entityName  . 'Repository")');
 
         $id = $class->addProperty('id');
         $id->setVisibility('private');
@@ -88,9 +85,85 @@ class GeneratorService
         $method->addComment('@param int $id');
         $method->setBody('$this->id = $id;');
 
+        $useDateTime = false;
+
+        foreach ($fields as $fieldInfo) {
+
+            $name = $fieldInfo['name'];
+            $type = $fieldInfo['type'];
+
+            switch ($type) {
+                case 'bool':
+                    $type = 'boolean';
+                    $var = 'bool';
+                    $typeHint = 'bool';
+                    break;
+                case 'varchar':
+                    $type = 'string';
+                    $var = 'string';
+                    $typeHint = 'string';
+                    break;
+                case 'double':
+                case 'decimal':
+                case 'float':
+                    $var = ($type == 'decimal') ? 'float' : $type;
+                    $type = ($type != 'decimal') ? 'float' : $type;
+                    $typeHint = 'float';
+                    $fieldInfo['precision'] = $fieldInfo['length'];
+                    unset($fieldInfo['length']);
+                    break;
+                case 'int':
+                    $type = 'integer';
+                    $var = 'int';
+                    $typeHint = 'int';
+                    break;
+                case 'date':
+                case 'datetime':
+                    $var = 'DateTime';
+                    $typeHint = 'DateTime';
+                    if (!$useDateTime) {
+                        $useDateTime = true;
+                        $namespace->addUse('DateTime');
+                    }
+                    break;
+            }
+
+            $typeString = 'type="' . $type . '"';
+
+            if (isset($fieldInfo['length'])) {
+                $typeString .= ', length=' . $fieldInfo['length'];
+            }
+
+            if (isset($fieldInfo['decimals'])) {
+                $typeString .= ', precision=' . $fieldInfo['precision'] . ', scale=' . $fieldInfo['decimals'];
+            }
+
+            $isNullable = $fieldInfo['nullable'] ? 'true' : 'false';
+            $typeString .= ', nullable=' . $isNullable;
+
+            $field = $class->addProperty($name);
+            $field->setVisibility('private');
+            $field->addComment('@var ' . $var . ' $' . $name);
+            $field->addComment('@ORM\Column(' . $typeString . ')');
+
+            $method = $class->addMethod('get' . ucfirst($name));
+            $method->setBody('return $this->' . $name . ';');
+            $method->addComment('@return ' . $var);
+            $method->setReturnType($var);
+
+            $method = $class->addMethod('set' . ucfirst($name));
+            $method->addParameter($name)->setTypeHint($typeHint);
+            $method->addComment('@param ' . $var . ' $' .$name);
+            $method->setBody('$this->' . $name . ' = $' . $name . ';');
+        }
+
 
         $namespace->add($class);
 
-        return $namespace;
+        $printer = new PsrPrinter();
+        $code = "<?php\n\n" . $printer->printNamespace($namespace);
+        file_put_contents('build/' . $this->buildId . '/src/Entity/' . $entityName . '.php', $code);
+
+        return true;
     }
 }
