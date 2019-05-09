@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Del\Generator;
 
+use Del\Form\AbstractForm;
+use Del\Form\Field\Text;
 use Exception;
 use Nette\PhpGenerator\ClassType;
 use Nette\PhpGenerator\Method;
@@ -29,6 +31,7 @@ class GeneratorService
         $this->createRepository($nameSpace, $entityName);
         $this->createCollection($nameSpace, $entityName);
         $this->createService($nameSpace, $entityName, $fields);
+        $this->createForm($nameSpace, $entityName, $fields);
         $this->createPackage($nameSpace, $entityName);
 
         return $this->buildId;
@@ -420,5 +423,82 @@ $c[\'service.' . $entityName . '\'] = new ' . $entityName . 'Service($em);');
         file_put_contents('build/' . $this->buildId . '/src/' . $entityName . 'Package.php', $code);
 
         return true;
+    }
+
+
+
+    /**
+     * @param string $nameSpace
+     * @param string $entityName
+     * @param array $fields
+     * @return bool
+     */
+    private function createForm(string $nameSpace, string $entityName, array $fields): bool
+    {
+        $namespace = new PhpNamespace($nameSpace . '\\Service');
+        $namespace->addUse($nameSpace . '\\Entity\\' . $entityName);
+        $namespace->addUse(AbstractForm::class);
+        $namespace->addUse(Text::class);
+        $class = new ClassType($entityName . 'Form');
+        $class->addExtend(AbstractForm::class);
+
+        $namespace->add($class);
+
+        // getEntityPath
+        $method = $class->addMethod('init');
+        $body = $this->createFormInitMethod($fields);
+        $method->setBody($body);
+
+        $printer = new PsrPrinter();
+        $code = "<?php\n\n" . $printer->printNamespace($namespace);
+        file_put_contents('build/' . $this->buildId . '/src/Form/' . $entityName . 'Form.php', $code);
+
+        return true;
+    }
+
+    /**
+     * @param array $fields
+     * @return string
+     */
+    private function createFormInitMethod(array $fields)
+    {
+        $body = '';
+
+        foreach ($fields as $field) {
+            $body .= $this->createFieldInitMethod($field);
+        }
+
+        return $body;
+    }
+
+    private function createFieldInitMethod(array $field)
+    {
+        $body = '$' . $field['name'] . ' = new Text(\'' . $field['name'] . '\');' . "\n";
+
+        if (!$field['nullable']) {
+            $body .= '$' . $field['name'] . '->setRequired(true);' . "\n";
+        }
+
+        if (isset($field['filters'])) {
+            $filters = $field['filters'];
+            foreach ($filters as $filter) {
+                $body .= '// add ' . $filter . 'filter here' . "\n";
+            }
+        }
+
+        if (isset($field['validators'])) {
+            $validators = $field['validators'];
+            foreach ($validators as $validator) {
+                $body .= '// add ' . $validator . 'validator here' . "\n";
+            }
+        }
+
+        $body .= '$this->addField($' . $field['name'] . ');' . "\n\n";
+
+//        print_r($field);
+
+
+
+        return $body;
     }
 }
