@@ -11,6 +11,8 @@ use Nette\PhpGenerator\ClassType;
 use Nette\PhpGenerator\Method;
 use Nette\PhpGenerator\PhpNamespace;
 use Nette\PhpGenerator\PsrPrinter;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 
 class GeneratorService
 {
@@ -32,6 +34,7 @@ class GeneratorService
         $this->createCollection($nameSpace, $entityName);
         $this->createService($nameSpace, $entityName, $fields);
         $this->createForm($nameSpace, $entityName, $fields);
+        $this->createController($nameSpace, $entityName, $fields);
         $this->createPackage($nameSpace, $entityName);
 
         return $this->buildId;
@@ -47,11 +50,12 @@ class GeneratorService
         $folders = [
             'build/' . $unique,
             'build/' . $unique . '/src',
-            'build/' . $unique . '/src/Entity',
-            'build/' . $unique . '/src/Service',
-            'build/' . $unique . '/src/Repository',
-            'build/' . $unique . '/src/Form',
             'build/' . $unique . '/src/Collection',
+            'build/' . $unique . '/src/Controller',
+            'build/' . $unique . '/src/Entity',
+            'build/' . $unique . '/src/Form',
+            'build/' . $unique . '/src/Repository',
+            'build/' . $unique . '/src/Service',
         ];
 
         foreach ($folders as $folder) {
@@ -471,6 +475,10 @@ $c[\'service.' . $entityName . '\'] = new ' . $entityName . 'Service($em);');
         return $body;
     }
 
+    /**
+     * @param array $field
+     * @return string
+     */
     private function createFieldInitMethod(array $field)
     {
         $body = '$' . $field['name'] . ' = new Text(\'' . $field['name'] . '\');' . "\n";
@@ -495,10 +503,104 @@ $c[\'service.' . $entityName . '\'] = new ' . $entityName . 'Service($em);');
 
         $body .= '$this->addField($' . $field['name'] . ');' . "\n\n";
 
-//        print_r($field);
-
-
-
         return $body;
+    }
+
+    /**
+     * @param string $nameSpace
+     * @param string $entityName
+     * @param array $fields
+     * @return bool
+     */
+    private function createController(string $nameSpace, string $entityName, array $fields): bool
+    {
+        $namespace = new PhpNamespace($nameSpace . '\\Controller');
+        $namespace->addUse($nameSpace . '\\Entity\\' . $entityName);
+        $namespace->addUse(RequestInterface::class);
+        $namespace->addUse(ResponseInterface::class);
+        $namespace->addUse($nameSpace . '\\Form\\' . $entityName . 'Form');
+        $namespace->addUse($nameSpace . '\\Entity\\' . $entityName . 'Service');
+        $class = new ClassType($entityName . 'Controller');
+        $name = ucfirst($entityName);
+
+        $namespace->add($class);
+
+        $property = $class->addProperty('service');
+        $property->addComment('@var ' . $entityName . 'Service');
+
+        // constructor
+        $method = $class->addMethod('__construct');
+        $method->addParameter('service')->setTypeHint($nameSpace . '\\Entity\\' . $entityName . 'Service');
+        $method->setBody('$this->service = $service;');
+        $method->addComment('@param ' . $entityName . 'Service' . ' $service');
+
+        // create
+        $method = $class->addMethod('create');
+        $method->addParameter('request')->setTypeHint(RequestInterface::class);
+        $method->setBody('$post = $this->getJsonPost($request);
+$form = new ' . $entityName . 'Form();
+$form->populate($post);
+if ($form->isValid()) {
+    $data = $form->getValues();
+    $' . $name . ' = $this->service->createFromArray($data);
+    $this->service->save(' . $name . ');
+    return $this->jsonResponse(' . $name . ');
+} else {
+    // handle errors
+}');
+        $method->addComment('@param RequestInterface $request');
+        $method->addComment('@return ResponseInterface $response');
+        $method->setReturnType(ResponseInterface::class);
+
+        // read
+        $method = $class->addMethod('read');
+        $method->addParameter('request')->setTypeHint(RequestInterface::class);
+        $method->setBody('');
+        $method->addComment('@param RequestInterface $request');
+        $method->addComment('@return ResponseInterface $response');
+        $method->setReturnType(ResponseInterface::class);;
+
+        // update
+        $method = $class->addMethod('update');
+        $method->addParameter('request')->setTypeHint(RequestInterface::class);
+        $method->setBody('');
+        $method->addComment('@param RequestInterface $request');
+        $method->addComment('@return ResponseInterface $response');
+        $method->setReturnType(ResponseInterface::class);
+
+        // update
+        $method = $class->addMethod('delete');
+        $method->addParameter('request')->setTypeHint(RequestInterface::class);
+        $method->setBody('');
+        $method->addComment('@param RequestInterface $request');
+        $method->addComment('@return ResponseInterface $response');
+        $method->setReturnType(ResponseInterface::class);
+
+        // get Json Post
+        $method = $class->addMethod('getJsonPost');
+        $method->addParameter('request')->setTypeHint(RequestInterface::class);
+        $method->setBody('return json_decode($request->getBody()->getContents(), true);');
+        $method->addComment('@param RequestInterface $request');
+        $method->addComment('@return array');
+        $method->setReturnType('array');
+
+        // Json Response
+        $method = $class->addMethod('jsonResponse');
+        $method->addParameter('data')->setTypeHint('array');
+        $method->setBody('$json = json_encode($data);
+// create proper $response later
+header(\'Content-Type: application/json\');
+echo $json;
+exit;');
+        $method->addComment('@param array $data');
+        $method->addComment('@return ' . ResponseInterface::class);
+        $method->setReturnType(ResponseInterface::class);
+
+
+        $printer = new PsrPrinter();
+        $code = "<?php\n\n" . $printer->printNamespace($namespace);
+        file_put_contents('build/' . $this->buildId . '/src/Controller/' . $entityName . 'Controller.php', $code);
+
+        return true;
     }
 }
