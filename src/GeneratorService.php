@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Del\Generator;
 
 use Del\Form\AbstractForm;
+use Del\Form\Field\Submit;
 use Del\Form\Field\Text;
 use Exception;
 use Nette\PhpGenerator\ClassType;
@@ -354,7 +355,16 @@ return false;');
         $body = '$' . $name . ' = new ' . $entityName . '();' . "\n";
         $body .= 'isset($data[\'id\']) ? $' . $name . '->setId($data[\'id\']) : null;' . "\n";
         foreach ($fields as $field) {
-            $body .= 'isset($data[\'' . $field['name'] . '\']) ? $' . $name . '->set' . ucfirst($field['name']) . '($data[\'' . $field['name'] . '\']) : null;' . "\n";
+            if (in_array($field['type'], ['date', 'datetime'])) {
+                $namespace->addUse('DateTime');
+                $body .= "\n" . 'if (isset($data[\'' . $field['name'] . '\'])) {
+    $' . $field['name'] . ' = $data[\'' . $field['name'] . '\'] instanceof DateTime ? $data[\'' . $field['name'] . '\'] : DateTime::createFromFormat(\'Y-m-d\', $data[\'' . $field['name'] . '\']);
+    $' . $name . '->set' . ucfirst($field['name']) . '($' . $field['name'] . ');
+}' . "\n";
+            } else {
+                $body .= 'isset($data[\'' . $field['name'] . '\']) ? $' . $name . '->set' . ucfirst($field['name']) . '($data[\'' . $field['name'] . '\']) : null;' . "\n";
+            }
+
         }
         reset($fields);
         $body .= "\nreturn $" . $name . ';';
@@ -452,6 +462,7 @@ $c[\'service.' . $entityName . '\'] = new ' . $entityName . 'Service($em);');
         $namespace = new PhpNamespace($nameSpace . '\\Form');
         $namespace->addUse($nameSpace . '\\Entity\\' . $entityName);
         $namespace->addUse(AbstractForm::class);
+        $namespace->addUse(Submit::class);
         $namespace->addUse(Text::class);
         $class = new ClassType($entityName . 'Form');
         $class->addExtend(AbstractForm::class);
@@ -482,6 +493,9 @@ $c[\'service.' . $entityName . '\'] = new ' . $entityName . 'Service($em);');
             $body .= $this->createFieldInitMethod($field);
         }
 
+        $body .= '$submit = new Submit(\'submit\');' . "\n";
+        $body .= '$this->addField($submit);';
+
         return $body;
     }
 
@@ -492,6 +506,7 @@ $c[\'service.' . $entityName . '\'] = new ' . $entityName . 'Service($em);');
     private function createFieldInitMethod(array $field)
     {
         $body = '$' . $field['name'] . ' = new Text(\'' . $field['name'] . '\');' . "\n";
+        $body .= '$' . $field['name'] . '->setLabel(\'' . ucfirst($field['name']). '\');' . "\n";
 
         if (!$field['nullable']) {
             $body .= '$' . $field['name'] . '->setRequired(true);' . "\n";
