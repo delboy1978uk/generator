@@ -170,6 +170,30 @@ class GeneratorService
         }
         reset($fields);
 
+        // toArray()
+        $method = $class->addMethod('toArray');
+        $method->addComment('@return array');
+        $body = '$data = [' . "\n";
+        $body .= "    'id' => \$this->getId(),\n";
+        foreach ($fields as $field) {
+            $body .= "    '{$field['name']}' => \$this->get" . ucfirst($field['name']) . "(),\n";
+        }
+        $body .= "];\n\nreturn \$data;";
+        $method->setBody($body);
+        reset($fields);
+
+        // toJson()
+        $method = $class->addMethod('toJson');
+        $method->addComment('@return string');
+        $body = "return \json_encode(\$this->toArray());\n";
+        $method->setBody($body);
+
+        // toString()
+        $method = $class->addMethod('__toString');
+        $method->addComment('@return string');
+        $body = "return \$this->toJson();\n";
+        $method->setBody($body);
+
         $namespace->add($class);
 
         $printer = new PsrPrinter();
@@ -338,20 +362,6 @@ return false;');
         $method->addComment('@param array $data');
         $method->addComment('@return $' . $entityName);
 
-        // toArray()
-        $method = $class->addMethod('toArray');
-        $method->addParameter($name)->setTypeHint($nameSpace . '\\Entity\\' . $entityName);
-        $body = '$data = [' . "\n";
-        $body .= "    'id' => $" . $name . "->getId(),\n";
-        foreach ($fields as $field) {
-            $body .= "    '{$field['name']}' => $" . $name . "->get" . ucfirst($field['name']) . "(),\n";
-        }
-        reset($fields);
-        $body .= "];\n\nreturn " . '$data;';
-        $method->setBody($body);
-        $method->addComment('@param ' . $entityName . ' $' . $name);
-        $method->addComment('@return array');
-
 
         // save
         $method = $class->addMethod('save' . $entityName);
@@ -372,7 +382,7 @@ return false;');
 
         // getRepository
         $method = $class->addMethod('getRepository');
-        $method->setBody('/** @var \\' . $nameSpace . '\Repository\\' . $entityName . 'Repository $repository */
+        $method->setBody('/** @var ' . $entityName . 'Repository $repository */
 $repository = $this->em->getRepository(' .  $entityName . '::class);
 
 return $repository;');
@@ -439,7 +449,7 @@ $c[\'service.' . $entityName . '\'] = new ' . $entityName . 'Service($em);');
      */
     private function createForm(string $nameSpace, string $entityName, array $fields): bool
     {
-        $namespace = new PhpNamespace($nameSpace . '\\Service');
+        $namespace = new PhpNamespace($nameSpace . '\\Form');
         $namespace->addUse($nameSpace . '\\Entity\\' . $entityName);
         $namespace->addUse(AbstractForm::class);
         $namespace->addUse(Text::class);
@@ -519,9 +529,9 @@ $c[\'service.' . $entityName . '\'] = new ' . $entityName . 'Service($em);');
         $namespace->addUse(RequestInterface::class);
         $namespace->addUse(ResponseInterface::class);
         $namespace->addUse($nameSpace . '\\Form\\' . $entityName . 'Form');
-        $namespace->addUse($nameSpace . '\\Entity\\' . $entityName . 'Service');
+        $namespace->addUse($nameSpace . '\\Service\\' . $entityName . 'Service');
         $class = new ClassType($entityName . 'Controller');
-        $name = ucfirst($entityName);
+        $name = lcfirst($entityName);
 
         $namespace->add($class);
 
@@ -530,31 +540,34 @@ $c[\'service.' . $entityName . '\'] = new ' . $entityName . 'Service($em);');
 
         // constructor
         $method = $class->addMethod('__construct');
-        $method->addParameter('service')->setTypeHint($nameSpace . '\\Entity\\' . $entityName . 'Service');
+        $method->addParameter('service')->setTypeHint($nameSpace . '\\Service\\' . $entityName . 'Service');
         $method->setBody('$this->service = $service;');
         $method->addComment('@param ' . $entityName . 'Service' . ' $service');
 
         // create
         $method = $class->addMethod('create');
         $method->addParameter('request')->setTypeHint(RequestInterface::class);
+        $method->addParameter('response')->setTypeHint(ResponseInterface::class);
         $method->setBody('$post = $this->getJsonPost($request);
-$form = new ' . $entityName . 'Form();
+$form = new ' . $entityName . 'Form(\'create\');
 $form->populate($post);
 if ($form->isValid()) {
     $data = $form->getValues();
     $' . $name . ' = $this->service->createFromArray($data);
-    $this->service->save(' . $name . ');
-    return $this->jsonResponse(' . $name . ');
+    $this->service->save' . $entityName . '($' . $name . ');' . "\n" . '
+    return $this->jsonResponse($response, $' . $name . '->toArray());
 } else {
     // handle errors
 }');
         $method->addComment('@param RequestInterface $request');
         $method->addComment('@return ResponseInterface $response');
+        $method->addComment('@throws \Doctrine\ORM\OptimisticLockException');
         $method->setReturnType(ResponseInterface::class);
 
         // read
         $method = $class->addMethod('read');
         $method->addParameter('request')->setTypeHint(RequestInterface::class);
+        $method->addParameter('response')->setTypeHint(ResponseInterface::class);
         $method->setBody('');
         $method->addComment('@param RequestInterface $request');
         $method->addComment('@return ResponseInterface $response');
@@ -563,6 +576,7 @@ if ($form->isValid()) {
         // update
         $method = $class->addMethod('update');
         $method->addParameter('request')->setTypeHint(RequestInterface::class);
+        $method->addParameter('response')->setTypeHint(ResponseInterface::class);
         $method->setBody('');
         $method->addComment('@param RequestInterface $request');
         $method->addComment('@return ResponseInterface $response');
@@ -571,6 +585,7 @@ if ($form->isValid()) {
         // update
         $method = $class->addMethod('delete');
         $method->addParameter('request')->setTypeHint(RequestInterface::class);
+        $method->addParameter('response')->setTypeHint(ResponseInterface::class);
         $method->setBody('');
         $method->addComment('@param RequestInterface $request');
         $method->addComment('@return ResponseInterface $response');
@@ -578,6 +593,7 @@ if ($form->isValid()) {
 
         // get Json Post
         $method = $class->addMethod('getJsonPost');
+        $method->setVisibility('protected');
         $method->addParameter('request')->setTypeHint(RequestInterface::class);
         $method->setBody('return json_decode($request->getBody()->getContents(), true);');
         $method->addComment('@param RequestInterface $request');
@@ -586,6 +602,7 @@ if ($form->isValid()) {
 
         // Json Response
         $method = $class->addMethod('jsonResponse');
+        $method->addParameter('response')->setTypeHint(ResponseInterface::class);
         $method->addParameter('data')->setTypeHint('array');
         $method->setBody('$json = json_encode($data);
 // create proper $response later
@@ -593,7 +610,7 @@ header(\'Content-Type: application/json\');
 echo $json;
 exit;');
         $method->addComment('@param array $data');
-        $method->addComment('@return ' . ResponseInterface::class);
+        $method->addComment('@return ResponseInterface $response');
         $method->setReturnType(ResponseInterface::class);
 
 

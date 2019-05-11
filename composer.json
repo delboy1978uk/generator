@@ -1,6 +1,6 @@
 {
     "require": {
-        "ext-json": "*"
+        "ext-json": "*",
         "delboy1978uk/common": "^3.0",
         "nette/php-generator": "^3.2",
         "delboy1978uk/form": "^1.3",
