@@ -1,5 +1,15 @@
 {
+    "name": "delboy1978uk/generator",
+    "description": "A basic crud entity, form and service generator",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Derek Stephen McLean",
+            "email": "delboy1978uk@gmail.com"
+        }
+    ],
     "require": {
+        "php": ">7.0",
         "ext-json": "*",
         "delboy1978uk/common": "^3.0",
         "nette/php-generator": "^3.2",
