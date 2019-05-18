@@ -1,9 +1,9 @@
 #!/usr/bin/env php
 <?php
 
-chdir(dirname(__DIR__));
+$path = file_exists('vendor/autoload.php') ? 'vendor/autoload.php' : '../../../autoload.php';
 
-require_once './vendor/autoload.php';
+require_once $path;
 
 use Del\Common\ContainerService;
 use Del\Common\Config\DbCredentials;
