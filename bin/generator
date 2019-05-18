@@ -13,16 +13,31 @@ use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Helper\HelperSet;
 use Symfony\Component\Console\Helper\QuestionHelper;
 
-$dbConfig = require_once 'migrant-cfg.php';
-$containerSvc = ContainerService::getInstance();
-$credentials = new DbCredentials($dbConfig['db']);
-$helperSet = new HelperSet();
-$helperSet->set(new QuestionHelper());
-$generatorCommand = new GeneratorCommand();
-$clearCommand = new ClearBuildsCommand();
 
-$app = new Application('Entity Generator');
-$app->setHelperSet($helperSet);
-$app->add($generatorCommand);
-$app->add($clearCommand);
-$app->run();
+$config = [];
+if (file_exists('config/db.php')) {
+    $config = require_once 'config/db.php';
+}
+
+if (file_exists('migrant-cfg.php')) {
+    $config = require_once 'migrant-cfg.php';
+}
+
+if (empty($config)) {
+    echo "No config found.\n";
+    echo 'Please add a "db"  config, in either config/db.php or migrant-cfg.php';
+} else {
+
+    $containerSvc = ContainerService::getInstance();
+    $credentials = new DbCredentials($config['db']);
+    $helperSet = new HelperSet();
+    $helperSet->set(new QuestionHelper());
+    $generatorCommand = new GeneratorCommand();
+    $clearCommand = new ClearBuildsCommand();
+
+    $app = new Application('Entity Generator');
+    $app->setHelperSet($helperSet);
+    $app->add($generatorCommand);
+    $app->add($clearCommand);
+    $app->run();
+}
