@@ -20,5 +20,6 @@
         "psr-4": {
             "Del\\Generator\\": "src"
         }
-    }
+    },
+    "bin": [ "bin/generator"]
 }
