@@ -65,6 +65,10 @@ class GeneratorService
             }
         }
 
+        if (!file_exists('migrations')) {
+            mkdir('migrations');
+        }
+
         return true;
     }
 
