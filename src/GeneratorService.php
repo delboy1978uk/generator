@@ -481,7 +481,7 @@ $c[\'service.' . $entityName . '\'] = new ' . $entityName . 'Service($em);');
 
         $printer = new PsrPrinter();
         $code = "<?php\n\n" . $printer->printNamespace($namespace);
-        file_put_contents('build/' . $this->buildId . '/src/Form/' . $entityName . 'Form.php', $code);
+        file_put_contents('build/' . $this->buildId . '/' . $entityName . '/Form/' . $entityName . 'Form.php', $code);
 
         return true;
     }
