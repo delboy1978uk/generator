@@ -204,7 +204,7 @@ class GeneratorService
 
         $printer = new PsrPrinter();
         $code = "<?php\n\n" . $printer->printNamespace($namespace);
-        file_put_contents('build/' . $this->buildId . '/src/Entity/' . $entityName . '.php', $code);
+        file_put_contents('build/' . $this->buildId . '/'. $entityName . '/Entity/' . $entityName . '.php', $code);
 
         return true;
     }
@@ -244,7 +244,7 @@ $this->_em->flush($'. $name . ');');
 
         $printer = new PsrPrinter();
         $code = "<?php\n\n" . $printer->printNamespace($namespace);
-        file_put_contents('build/' . $this->buildId . '/src/Repository/' . $entityName . 'Repository.php', $code);
+        file_put_contents('build/' . $this->buildId . '/' . $entityName . '/Repository/' . $entityName . 'Repository.php', $code);
 
         return true;
 
@@ -322,7 +322,7 @@ return false;');
 
         $printer = new PsrPrinter();
         $code = "<?php\n\n" . $printer->printNamespace($namespace);
-        file_put_contents('build/' . $this->buildId . '/src/Collection/' . $entityName . 'Collection.php', $code);
+        file_put_contents('build/' . $this->buildId . '/' . $entityName . '/Collection/' . $entityName . 'Collection.php', $code);
 
         return true;
     }
@@ -407,7 +407,7 @@ return $repository;');
 
         $printer = new PsrPrinter();
         $code = "<?php\n\n" . $printer->printNamespace($namespace);
-        file_put_contents('build/' . $this->buildId . '/src/Service/' . $entityName . 'Service.php', $code);
+        file_put_contents('build/' . $this->buildId . '/' . $entityName . '/Service/' . $entityName . 'Service.php', $code);
 
         return true;
     }
@@ -449,7 +449,7 @@ $c[\'service.' . $entityName . '\'] = new ' . $entityName . 'Service($em);');
 
         $printer = new PsrPrinter();
         $code = "<?php\n\n" . $printer->printNamespace($namespace);
-        file_put_contents('build/' . $this->buildId . '/src/' . $entityName . 'Package.php', $code);
+        file_put_contents('build/' . $this->buildId . '/' . $entityName . '/' . $entityName . 'Package.php', $code);
 
         return true;
     }
@@ -636,7 +636,7 @@ exit;');
 
         $printer = new PsrPrinter();
         $code = "<?php\n\n" . $printer->printNamespace($namespace);
-        file_put_contents('build/' . $this->buildId . '/src/Controller/' . $entityName . 'Controller.php', $code);
+        file_put_contents('build/' . $this->buildId . '/' . $entityName . '/Controller/' . $entityName . 'Controller.php', $code);
 
         return true;
     }
