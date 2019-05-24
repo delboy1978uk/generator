@@ -438,7 +438,7 @@ $c[\'service.' . $entityName . '\'] = new ' . $entityName . 'Service($em);');
 
         // getEntityPath
         $method = $class->addMethod('getEntityPath');
-        $method->setBody("return 'build/" . $this->buildId . "/src/Entity';");
+        $method->setBody("return 'build/" . $this->buildId . "/src/" . $entityName . "/Entity';");
         $method->addComment('@return string');
 
         // getEntityPath
