@@ -29,7 +29,7 @@ class GeneratorService
      */
     public function createEntityModule(string $nameSpace, string $entityName, array $fields): string
     {
-        $this->createBuildFolders();
+        $this->createBuildFolders($entityName);
         $this->createEntity($nameSpace, $entityName, $fields);
         $this->createRepository($nameSpace, $entityName);
         $this->createCollection($nameSpace, $entityName);
@@ -42,21 +42,22 @@ class GeneratorService
     }
 
     /**
+     * @param string $entityName
      * @return bool
      * @throws Exception
      */
-    private function createBuildFolders(): bool
+    private function createBuildFolders(string $entityName): bool
     {
         $unique = $this->buildId = uniqid();
         $folders = [
             'build/' . $unique,
-            'build/' . $unique . '/src',
-            'build/' . $unique . '/src/Collection',
-            'build/' . $unique . '/src/Controller',
-            'build/' . $unique . '/src/Entity',
-            'build/' . $unique . '/src/Form',
-            'build/' . $unique . '/src/Repository',
-            'build/' . $unique . '/src/Service',
+            'build/' . $unique . '/' . $entityName,
+            'build/' . $unique . '/' . $entityName . '/Collection',
+            'build/' . $unique . '/' . $entityName . '/Controller',
+            'build/' . $unique . '/' . $entityName . '/Entity',
+            'build/' . $unique . '/' . $entityName . '/Form',
+            'build/' . $unique . '/' . $entityName . '/Repository',
+            'build/' . $unique . '/' . $entityName . '/Service',
         ];
 
         foreach ($folders as $folder) {
