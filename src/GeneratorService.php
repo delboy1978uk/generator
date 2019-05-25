@@ -225,7 +225,7 @@ class GeneratorService
         $name = lcfirst($entityName);
 
         $method = $class->addMethod('save');
-        $method->addParameter($name)->setTypeHint($nameSpace . '\\Entity\\' . $entityName);
+        $method->addParameter($name)->setTypeHint($nameSpace . '\\' . $entityName  . '\\Entity\\' . $entityName);
         $method->setBody('if(!$' . $name . '->getID()) {
     $this->_em->persist($' . $name . ');
 }
@@ -233,14 +233,16 @@ $this->_em->flush($' . $name . ');
 return $' . $name . ';');
         $method->addComment('@param ' . $entityName . ' $' . $name);
         $method->addComment('@return $' . $name);
+        $method->addComment('@throws \Doctrine\ORM\ORMException');
         $method->addComment('@throws \Doctrine\ORM\OptimisticLockException');
 
         $method = $class->addMethod('delete');
-        $method->addParameter($name)->setTypeHint($nameSpace . '\\Entity\\' . $entityName);
+        $method->addParameter($name)->setTypeHint($nameSpace . '\\' . $entityName   . '\\Entity\\' . $entityName);
         $method->setBody('$this->_em->remove($'. $name . ');
 $this->_em->flush($'. $name . ');');
         $method->addComment('@param ' . $entityName . ' $' . $name);
         $method->addComment('@throws \Doctrine\ORM\OptimisticLockException');
+        $method->addComment('@throws \Doctrine\ORM\ORMException');
 
         $printer = new PsrPrinter();
         $code = "<?php\n\n" . $printer->printNamespace($namespace);
@@ -335,7 +337,7 @@ return false;');
      */
     private function createService(string $nameSpace, string $entityName, array $fields): bool
     {
-        $namespace = new PhpNamespace($nameSpace . '\\Service');
+        $namespace = new PhpNamespace($nameSpace . '\\' . $entityName   . '\\Service');
         $namespace->addUse($nameSpace . '\\' . $entityName . '\\Entity\\' . $entityName);
         $namespace->addUse($nameSpace . '\\' . $entityName . '\\Repository\\' . $entityName . 'Repository');
         $namespace->addUse('Doctrine\ORM\EntityManager');
@@ -380,10 +382,11 @@ return false;');
 
         // save
         $method = $class->addMethod('save' . $entityName);
-        $method->addParameter($name)->setTypeHint($nameSpace . '\\Entity\\' . $entityName);
+        $method->addParameter($name)->setTypeHint($nameSpace . '\\' . $entityName  . '\\Entity\\' . $entityName);
         $method->setBody('return $this->getRepository()->save($' . $name . ');');
         $method->addComment('@param ' . $entityName . ' $' . $name);
         $method->addComment('@return ' . $entityName );
+        $method->addComment('@throws \Doctrine\ORM\ORMException');
         $method->addComment('@throws \Doctrine\ORM\OptimisticLockException');
         $method->setReturnType($nameSpace . '\\' . $entityName . '\\Entity\\' . $entityName);
 
@@ -393,6 +396,7 @@ return false;');
         $method->addParameter($name)->setTypeHint($nameSpace . '\\' . $entityName . '\\Entity\\' . $entityName);
         $method->setBody('return $this->getRepository()->delete($' . $name . ');');
         $method->addComment('@param ' . $entityName . ' $' . $name);
+        $method->addComment('@throws \Doctrine\ORM\ORMException');
         $method->addComment('@throws \Doctrine\ORM\OptimisticLockException');
 
         // getRepository
@@ -420,7 +424,7 @@ return $repository;');
      */
     private function createPackage(string $nameSpace, string $entityName): bool
     {
-        $namespace = new PhpNamespace($nameSpace);
+        $namespace = new PhpNamespace($nameSpace . '\\' . $entityName  );
         $namespace->addUse($nameSpace . '\\' . $entityName  . '\\Service\\' . $entityName . 'Service');
         $namespace->addUse('Del\Common\Container\RegistrationInterface');
         $namespace->addUse('Doctrine\ORM\EntityManager');
@@ -544,7 +548,7 @@ $c[\'service.' . $entityName . '\'] = new ' . $entityName . 'Service($em);');
      */
     private function createController(string $nameSpace, string $entityName, array $fields): bool
     {
-        $namespace = new PhpNamespace($nameSpace . '\\Controller');
+        $namespace = new PhpNamespace($nameSpace . '\\' . $entityName   . '\\Controller');
         $namespace->addUse($nameSpace . '\\' . $entityName . '\\Entity\\' . $entityName);
         $namespace->addUse(RequestInterface::class);
         $namespace->addUse(ResponseInterface::class);
@@ -560,7 +564,7 @@ $c[\'service.' . $entityName . '\'] = new ' . $entityName . 'Service($em);');
 
         // constructor
         $method = $class->addMethod('__construct');
-        $method->addParameter('service')->setTypeHint($nameSpace . '\\Service\\' . $entityName . 'Service');
+        $method->addParameter('service')->setTypeHint($nameSpace . '\\' . $entityName  . '\\Service\\' . $entityName . 'Service');
         $method->setBody('$this->service = $service;');
         $method->addComment('@param ' . $entityName . 'Service' . ' $service');
 
