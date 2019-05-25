@@ -586,6 +586,7 @@ if ($form->isValid()) {
         $method->addComment('@param RequestInterface $request');
         $method->addComment('@return ResponseInterface $response');
         $method->addComment('@throws \Doctrine\ORM\OptimisticLockException');
+        $method->addComment('@throws \Doctrine\ORM\ORMException');
         $method->setReturnType(ResponseInterface::class);
 
         // read
