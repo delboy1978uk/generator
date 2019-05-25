@@ -45,7 +45,7 @@ class GeneratorCommand extends Command
         $output->writeln('Entity and Service Generator');
         $output->writeln('');
 
-        $question = new Question('Enter the base namespace: ', '');
+        $question = new Question('Enter the base namespace: ', 'BoneMvc\\Module');
         $nameSpace = $this->helper->ask($input, $output, $question);
 
         $question = new Question('Enter the name of the entity: ', false);
