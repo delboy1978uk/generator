@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Del\Generator;
 
+use BoneMvc\Module\Dragon\Entity\Dragon;
 use Del\Form\AbstractForm;
 use Del\Form\Field\Submit;
 use Del\Form\Field\Text;
@@ -58,6 +59,7 @@ class GeneratorService
             'build/' . $unique . '/' . $entityName . '/Form',
             'build/' . $unique . '/' . $entityName . '/Repository',
             'build/' . $unique . '/' . $entityName . '/Service',
+            'build/' . $unique . '/' . $entityName . '/View',
         ];
 
         foreach ($folders as $folder) {
@@ -263,11 +265,15 @@ $this->_em->flush($'. $name . ');');
         $namespace = new PhpNamespace($nameSpace . '\\' . $entityName . '\\Collection');
         $namespace->addUse($nameSpace . '\\' . $entityName . '\\Entity\\' . $entityName);
         $namespace->addUse('Doctrine\Common\Collections\ArrayCollection');
+        $namespace->addUse('JsonSerializable');
         $namespace->addUse('LogicException');
+
         $class = new ClassType($entityName . 'Collection');
         $class->addExtend('Doctrine\Common\Collections\ArrayCollection');
+        $class->addImplement('JsonSerializable');
         $namespace->add($class);
         $name = lcfirst($entityName);
+
 
         $method = $class->addMethod('update');
         $method->addParameter($name)->setTypeHint($nameSpace . '\\' . $entityName . '\\Entity\\' . $entityName);
@@ -291,6 +297,7 @@ throw new LogicException(\'' . $entityName . ' was not in the collection.\');');
         $method = $class->addMethod('current');
         $method->setBody('return parent::current();');
         $method->addComment('@return ' . $entityName . '|null');
+
 
         $method = $class->addMethod('findKey');
         $method->addParameter($name)->setTypeHint($nameSpace . '\\' . $entityName . '\\Entity\\' . $entityName);
@@ -320,6 +327,29 @@ while($it->valid()) {
 return false;');
         $method->addComment('@param int $id');
         $method->addComment('@return ' . $entityName . '|bool');
+
+
+        $method = $class->addMethod('toArray');
+        $method->setBody('$collection = [];
+$it = $this->getIterator();
+$it->rewind();
+while($it->valid()) {
+    /** @var ' . $entityName . ' $row */
+    $row = $it->current();
+    $collection[] = $row->toArray();
+    $it->next();
+}
+
+return $collection;');
+        $method->addComment('@return array');
+
+        $method = $class->addMethod('jsonSerialize');
+        $method->setBody('return \json_encode($this->toArray());');
+        $method->addComment('@return string');
+
+        $method = $class->addMethod('__toString');
+        $method->setBody('return $this->jsonSerialize();');
+        $method->addComment('@return string');
 
 
         $printer = new PsrPrinter();
