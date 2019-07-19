@@ -562,7 +562,7 @@ $c[\'service.' . $entityName . '\'] = new ' . $entityName . 'Service($em);');
         $method->setReturnType('void');
 
         $printer = new PsrPrinter();
-        $code = $printer->printNamespace($file);
+        $code = $printer->printFile($file);
         file_put_contents('build/' . $this->buildId . '/' . $entityName . '/Form/' . $entityName . 'Form.php', $code);
 
         return true;
