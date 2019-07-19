@@ -540,11 +540,16 @@ $c[\'service.' . $entityName . '\'] = new ' . $entityName . 'Service($em);');
      */
     private function createForm(string $nameSpace, string $entityName, array $fields): bool
     {
-        $namespace = new PhpNamespace($nameSpace . '\\' . $entityName . '\\Form');
-        $namespace->addUse($nameSpace . '\\' . $entityName . '\\Entity\\' . $entityName);
+        $file = new PhpFile();
+        $file->setStrictTypes();
+        $moduleNamespace = $nameSpace . '\\' . $entityName;
+        $namespace = $file->addNamespace($moduleNamespace . '\\Form');
+
+        $namespace->addUse($moduleNamespace . '\\Entity\\' . $entityName);
         $namespace->addUse(AbstractForm::class);
         $namespace->addUse(Submit::class);
         $namespace->addUse(Text::class);
+
         $class = new ClassType($entityName . 'Form');
         $class->addExtend(AbstractForm::class);
 
@@ -554,9 +559,10 @@ $c[\'service.' . $entityName . '\'] = new ' . $entityName . 'Service($em);');
         $method = $class->addMethod('init');
         $body = $this->createFormInitMethod($fields);
         $method->setBody($body);
+        $method->setReturnType('void');
 
         $printer = new PsrPrinter();
-        $code = "<?php\n\n" . $printer->printNamespace($namespace);
+        $code = $printer->printNamespace($file);
         file_put_contents('build/' . $this->buildId . '/' . $entityName . '/Form/' . $entityName . 'Form.php', $code);
 
         return true;
