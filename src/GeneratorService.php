@@ -452,11 +452,16 @@ return $collection;');
      */
     private function createService(string $nameSpace, string $entityName, array $fields): bool
     {
-        $namespace = new PhpNamespace($nameSpace . '\\' . $entityName   . '\\Service');
-        $namespace->addUse($nameSpace . '\\' . $entityName . '\\Entity\\' . $entityName);
-        $namespace->addUse($nameSpace . '\\' . $entityName . '\\Repository\\' . $entityName . 'Repository');
+        $file = new PhpFile();
+        $file->setStrictTypes();
+        $moduleNamespace = $nameSpace . '\\' . $entityName;
+        $namespace = $file->addNamespace($moduleNamespace . '\\Service');
+
+        $namespace->addUse($moduleNamespace . '\\Entity\\' . $entityName);
+        $namespace->addUse($moduleNamespace . '\\Repository\\' . $entityName . 'Repository');
         $namespace->addUse('Doctrine\ORM\EntityManager');
-        $class = new ClassType($entityName . 'Service');
+
+        $class = $namespace->addClass($entityName . 'Service');
         $namespace->add($class);
         $name = lcfirst($entityName);
 
@@ -471,11 +476,25 @@ return $collection;');
         $method->setBody('$this->em = $em;');
         $method->addComment('@param EntityManager $em');
 
+
         // createFromArray
         $method = $class->addMethod('createFromArray');
         $method->addParameter('data')->setTypeHint('array');
-        $body = '$' . $name . ' = new ' . $entityName . '();' . "\n";
-        $body .= 'isset($data[\'id\']) ? $' . $name . '->setId($data[\'id\']) : null;' . "\n";
+        $method->setReturnType($moduleNamespace . '\\Entity\\' . $entityName);
+        $body = '$' . $name . ' = new ' . $entityName . '();
+
+return $this->updateFromArray($' . $name . ', $data);';
+        $method->setBody($body);
+        $method->addComment('@param array $data');
+        $method->addComment('@return ' . $entityName);
+        $method->setReturnType($moduleNamespace . '\\Entity\\' . $entityName);
+
+        // update from array
+        $method = $class->addMethod('updateFromArray');
+        $method->addParameter($name)->setTypeHint($moduleNamespace . '\\Entity\\' . $entityName);
+        $method->addParameter('data')->setTypeHint('array');
+        $method->setReturnType($moduleNamespace . '\\Entity\\' . $entityName);
+        $body = 'isset($data[\'id\']) ? $' . $name . '->setId($data[\'id\']) : null;' . "\n";
         foreach ($fields as $field) {
             if (in_array($field['type'], ['date', 'datetime'])) {
                 $namespace->addUse('DateTime');
@@ -486,13 +505,15 @@ return $collection;');
             } else {
                 $body .= 'isset($data[\'' . $field['name'] . '\']) ? $' . $name . '->set' . ucfirst($field['name']) . '($data[\'' . $field['name'] . '\']) : null;' . "\n";
             }
-
         }
-        reset($fields);
         $body .= "\nreturn $" . $name . ';';
+        reset($fields);
         $method->setBody($body);
         $method->addComment('@param array $data');
-        $method->addComment('@return $' . $entityName);
+        $method->addComment('@return ' . $entityName);
+        $method->setReturnType($moduleNamespace . '\\Entity\\' . $entityName);
+
+
 
 
         // save
@@ -503,16 +524,17 @@ return $collection;');
         $method->addComment('@return ' . $entityName );
         $method->addComment('@throws \Doctrine\ORM\ORMException');
         $method->addComment('@throws \Doctrine\ORM\OptimisticLockException');
-        $method->setReturnType($nameSpace . '\\' . $entityName . '\\Entity\\' . $entityName);
+        $method->setReturnType($moduleNamespace . '\\Entity\\' . $entityName);
 
 
         // delete
         $method = $class->addMethod('delete' . $entityName);
         $method->addParameter($name)->setTypeHint($nameSpace . '\\' . $entityName . '\\Entity\\' . $entityName);
-        $method->setBody('return $this->getRepository()->delete($' . $name . ');');
+        $method->setBody('$this->getRepository()->delete($' . $name . ');');
         $method->addComment('@param ' . $entityName . ' $' . $name);
         $method->addComment('@throws \Doctrine\ORM\ORMException');
         $method->addComment('@throws \Doctrine\ORM\OptimisticLockException');
+        $method->setReturnType('void');
 
         // getRepository
         $method = $class->addMethod('getRepository');
@@ -521,11 +543,11 @@ $repository = $this->em->getRepository(' .  $entityName . '::class);
 
 return $repository;');
         $method->addComment('@return ' . $entityName . 'Repository');
-        $method->setReturnType($nameSpace . '\\' . $entityName . '\\Repository\\' . $entityName . 'Repository');
+        $method->setReturnType($moduleNamespace . '\\Repository\\' . $entityName . 'Repository');
 
 
         $printer = new PsrPrinter();
-        $code = "<?php\n\n" . $printer->printNamespace($namespace);
+        $code = $printer->printFile($file);
         file_put_contents('build/' . $this->buildId . '/' . $entityName . '/Service/' . $entityName . 'Service.php', $code);
 
         return true;
