@@ -103,6 +103,7 @@ class GeneratorService
         $file->setStrictTypes();
         $namespace = $file->addNamespace($nameSpace . '\\' . $entityName . '\\Entity');
         $namespace->addUse('Doctrine\ORM\Mapping', 'ORM');
+        $namespace->addUse('JsonSerializable');
         $class = new ClassType($entityName);
         $class->addComment('@ORM\Entity(repositoryClass="\\' . $nameSpace . '\Repository\\' . $entityName . 'Repository")');
 
@@ -114,10 +115,12 @@ class GeneratorService
         $id->addComment('@ORM\GeneratedValue');
 
         $method = $class->addMethod('getId');
+        $method->setReturnType('int');
         $method->setBody('return $this->id;');
         $method->addComment('@return int');
 
         $method = $class->addMethod('setId');
+        $method->setReturnType('void');
         $method->addParameter('id');
         $method->addComment('@param int $id');
         $method->setBody('$this->id = $id;');
@@ -143,8 +146,8 @@ class GeneratorService
                 case 'double':
                 case 'decimal':
                 case 'float':
-                    $var = ($type == 'decimal') ? 'float' : $type;
-                    $type = ($type != 'decimal') ? 'float' : $type;
+                    $var = ($type === 'decimal') ? 'float' : $type;
+                    $type = ($type !== 'decimal') ? 'float' : $type;
                     $typeHint = 'float';
                     $fieldInfo['precision'] = $fieldInfo['length'];
                     unset($fieldInfo['length']);
@@ -193,6 +196,7 @@ class GeneratorService
             $method->addParameter($name)->setTypeHint($typeHint);
             $method->addComment('@param ' . $var . ' $' . $name);
             $method->setBody('$this->' . $name . ' = $' . $name . ';');
+            $method->setReturnType('void');
         }
         reset($fields);
 
@@ -206,19 +210,22 @@ class GeneratorService
         }
         $body .= "];\n\nreturn \$data;";
         $method->setBody($body);
+        $method->setReturnType('array');
         reset($fields);
 
         // toJson()
-        $method = $class->addMethod('toJson');
+        $method = $class->addMethod('jsonSerialize');
         $method->addComment('@return string');
-        $body = "return \json_encode(\$this->toArray());\n";
+        $body = 'return \json_encode($this->toArray());';
         $method->setBody($body);
+        $method->setReturnType('string');
 
         // toString()
         $method = $class->addMethod('__toString');
         $method->addComment('@return string');
-        $body = "return \$this->toJson();\n";
+        $body = 'return $this->jsonSerialize();';
         $method->setBody($body);
+        $method->setReturnType('string');
 
         $namespace->add($class);
 
