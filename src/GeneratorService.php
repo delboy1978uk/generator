@@ -92,7 +92,7 @@ class GeneratorService
         $file = new PhpFile();
         $file->setStrictTypes();
         $moduleNamespace = $nameSpace . '\\' . $entityName;
-        $namespace = $file->addNamespace($moduleNamespace . '\\Controller');
+        $namespace = $file->addNamespace($moduleNamespace . '\\' . $entityName . 'Controller');
         $name = lcfirst($entityName);
 
         $namespace->addUse($moduleNamespace . '\\Collection\\' . $entityName . 'Collection');
@@ -103,7 +103,7 @@ class GeneratorService
         $namespace->addUse(ServerRequestInterface::class);
         $namespace->addUse('Zend\Diactoros\Response\JsonResponse');
 
-        $class = $namespace->addClass('ApiController');
+        $class = $namespace->addClass($entityName . 'ApiController');
 
         $property = $class->addProperty('service');
         $property->addComment('@param ' . $entityName . 'Service $service');
@@ -228,7 +228,7 @@ return new JsonResponse([\'deleted\' => true]);');
 
         $printer = new PsrPrinter();
         $code = $printer->printFile($file);
-        file_put_contents('build/' . $this->buildId . '/'. $entityName . '/Controller/ApiController.php', $code);
+        file_put_contents('build/' . $this->buildId . '/'. $entityName . '/Controller/' . $entityName . 'ApiController.php', $code);
 
 
         return true;
@@ -720,6 +720,9 @@ return $this->updateFromArray($' . $name . ', $data);';
 
         // update from array
         $method = $class->addMethod('updateFromArray');
+        $method->addComment('@param ' . $entityName .' $' . $name);
+        $method->addComment('@param array $data');
+        $method->addComment('@return ' . $entityName);
         $method->addParameter($name)->setTypeHint($moduleNamespace . '\\Entity\\' . $entityName);
         $method->addParameter('data')->setTypeHint('array');
         $method->setReturnType($moduleNamespace . '\\Entity\\' . $entityName);
@@ -738,9 +741,6 @@ return $this->updateFromArray($' . $name . ', $data);';
         $body .= "\nreturn $" . $name . ';';
         reset($fields);
         $method->setBody($body);
-        $method->addComment('@param array $data');
-        $method->addComment('@return ' . $entityName);
-        $method->setReturnType($moduleNamespace . '\\Entity\\' . $entityName);
 
 
 
@@ -790,18 +790,36 @@ return $repository;');
      */
     private function createPackage(string $nameSpace, string $entityName): bool
     {
-        $namespace = new PhpNamespace($nameSpace . '\\' . $entityName  );
-        $namespace->addUse($nameSpace . '\\' . $entityName  . '\\Service\\' . $entityName . 'Service');
-        $namespace->addUse('Del\Common\Container\RegistrationInterface');
+
+        $file = new PhpFile();
+        $file->setStrictTypes();
+        $moduleNamespace = $nameSpace . '\\' . $entityName;
+        $name = strtolower($entityName);
+        $namespace = $file->addNamespace($moduleNamespace);
+
+        $namespace->addUse('Barnacle\Container');
+        $namespace->addUse('Barnacle\Exception\NotFoundException');
+        $namespace->addUse('Barnacle\RegistrationInterface');
+        $namespace->addUse('Bone\Http\Middleware\HalCollection');
+        $namespace->addUse('Bone\Http\Middleware\HalEntity');
+        $namespace->addUse('Bone\Mvc\Router\RouterConfigInterface');
+        $namespace->addUse('Bone\Mvc\View\PlatesEngine');
+        $namespace->addUse($moduleNamespace . '\\Controller\\' . $entityName . 'ApiController');
+        $namespace->addUse($moduleNamespace . '\\Controller\\' . $entityName . 'Controller');
+        $namespace->addUse($moduleNamespace  . '\\Service\\' . $entityName . 'Service');
         $namespace->addUse('Doctrine\ORM\EntityManager');
-        $namespace->addUse('Pimple\Container');
-        $class = new ClassType($entityName . 'Package');
-        $class->addImplement('Del\Common\Container\RegistrationInterface');
-        $namespace->add($class);
+        $namespace->addUse('League\Route\RouteGroup');
+        $namespace->addUse('League\Route\Router');
+        $namespace->addUse('League\Route\Strategy\JsonStrategy');
+        $namespace->addUse('Zend\Diactoros\ResponseFactory');
+
+        $class = $namespace->addClass($entityName . 'Package');
+        $class->addImplement('Barnacle\RegistrationInterface');
+        $class->addImplement('Bone\Mvc\Router\RouterConfigInterface');
 
         // add to container
         $method = $class->addMethod('addToContainer');
-        $method->addParameter('c')->setTypeHint('Pimple\Container');
+        $method->addParameter('c')->setTypeHint('Barnacle\Container');
         $method->setBody('/** @var EntityManager $em */
 $em = $c[\'doctrine.entity_manager\'];
 $c[\'service.' . $entityName . '\'] = new ' . $entityName . 'Service($em);');
@@ -812,13 +830,47 @@ $c[\'service.' . $entityName . '\'] = new ' . $entityName . 'Service($em);');
         $method->setBody("return 'build/" . $this->buildId . "/src/" . $entityName . "/Entity';");
         $method->addComment('@return string');
 
-        // getEntityPath
+        // hasEntityPath
         $method = $class->addMethod('hasEntityPath');
         $method->setBody("return true;");
         $method->addComment('@return bool');
 
+        // addRoutes
+        $method = $class->addMethod('addRoutes');
+        $method->addComment('@param Container $c');
+        $method->addComment('@param Router $router');
+        $method->addComment('@return Router');
+        $method->addParameter('c')->setTypeHint('Barnacle\Container');
+        $method->addParameter('router')->setTypeHint('League\Route\Router');
+        $method->addParameter('router')->setTypeHint('League\Route\Router');
+        $method->setReturnType('League\Route\Router');
+        $method->setBody('$router->map(\'GET\', \'/'. $name . '\', ['. $entityName . 'Controller::class, \'indexAction\']);
+$router->map(\'GET\', \'/'. $name . '/{id:number}\', ['. $entityName . 'Controller::class, \'viewAction\']);
+$router->map(\'GET\', \'/'. $name . '/create\', ['. $entityName . 'Controller::class, \'createAction\']);
+$router->map(\'GET\', \'/'. $name . '/edit/{id:number}\', ['. $entityName . 'Controller::class, \'editAction\']);
+$router->map(\'GET\', \'/'. $name . '/delete/{id:number}\', ['. $entityName . 'Controller::class, \'deleteAction\']);
+
+$router->map(\'POST\', \'/'. $name . '/create\', ['. $entityName . 'Controller::class, \'createAction\']);
+$router->map(\'POST\', \'/'. $name . '/edit/{id:number}\', ['. $entityName . 'Controller::class, \'editAction\']);
+$router->map(\'POST\', \'/'. $name . '/delete/{id:number}\', ['. $entityName . 'Controller::class, \'deleteAction\']);
+
+$factory = new ResponseFactory();
+$strategy = new JsonStrategy($factory);
+$strategy->setContainer($c);
+
+$router->group(\'/api\', function (RouteGroup $route) {
+    $route->map(\'GET\', \'/'. $name . '\', ['. $entityName . 'ApiController::class, \'indexAction\'])->prependMiddleware(new HalCollection(5));
+    $route->map(\'GET\', \'/'. $name . '/{id:number}\', ['. $entityName . 'ApiController::class, \'viewAction\'])->prependMiddleware(new HalEntity());
+    $route->map(\'POST\', \'/'. $name . '\', ['. $entityName . 'ApiController::class, \'createAction\']);
+    $route->map(\'PUT\', \'/'. $name . '/{id:number}\', ['. $entityName . 'ApiController::class, \'updateAction\']);
+    $route->map(\'DELETE\', \'/'. $name . '/{id:number}\', ['. $entityName . 'ApiController::class, \'deleteAction\']);
+})
+->setStrategy($strategy);
+
+return $router;');
+
         $printer = new PsrPrinter();
-        $code = "<?php\n\n" . $printer->printNamespace($namespace);
+        $code = "<?php\n\n" . $printer->printFile($file);
         file_put_contents('build/' . $this->buildId . '/' . $entityName . '/' . $entityName . 'Package.php', $code);
 
         return true;
