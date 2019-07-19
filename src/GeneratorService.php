@@ -4,17 +4,14 @@ declare(strict_types=1);
 
 namespace Del\Generator;
 
-use BoneMvc\Module\Dragon\Entity\Dragon;
 use Del\Form\AbstractForm;
 use Del\Form\Field\Submit;
 use Del\Form\Field\Text;
 use Exception;
 use Nette\PhpGenerator\ClassType;
-use Nette\PhpGenerator\Method;
 use Nette\PhpGenerator\PhpFile;
 use Nette\PhpGenerator\PhpNamespace;
 use Nette\PhpGenerator\PsrPrinter;
-use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -52,7 +49,7 @@ class GeneratorService
      */
     private function createBuildFolders(string $entityName): bool
     {
-        $unique = $this->buildId = uniqid();
+        $unique = $this->buildId = uniqid('m', false);
         $folders = [
             'build/' . $unique,
             'build/' . $unique . '/' . $entityName,
@@ -66,13 +63,15 @@ class GeneratorService
         ];
 
         foreach ($folders as $folder) {
-            if (!mkdir($folder)) {
+            if (!mkdir($folder) && !is_dir($folder)) {
                 throw new Exception('could not create ' . $folder);
             }
         }
 
         if (!file_exists('migrations')) {
-            mkdir('migrations');
+            if (!mkdir('migrations') && !is_dir('migrations')) {
+                throw new Exception('could not create ' . $folder);
+            }
         }
 
         return true;
@@ -243,41 +242,85 @@ class GeneratorService
      */
     private function createRepository(string $nameSpace, string $entityName): bool
     {
-        $namespace = new PhpNamespace($nameSpace  . '\\' . $entityName. '\\Repository');
+        $file = new PhpFile();
+        $file->setStrictTypes();
+        $moduleNamespace = $nameSpace . '\\' . $entityName;
+        $namespace = $file->addNamespace($moduleNamespace . '\\Repository');
+
+        $namespace->addUse('Doctrine\ORM\EntityNotFoundException');
         $namespace->addUse('Doctrine\ORM\EntityRepository');
-        $namespace->addUse($nameSpace . '\\' . $entityName . '\\Entity\\' . $entityName);
+        $namespace->addUse($moduleNamespace . '\\Collection\\' . $entityName . 'Collection');
+        $namespace->addUse($moduleNamespace . '\\Entity\\' . $entityName);
+
         $class = new ClassType($entityName . 'Repository');
         $class->addExtend('Doctrine\ORM\EntityRepository');
         $namespace->add($class);
         $name = lcfirst($entityName);
 
+        // find
+        $method = $class->addMethod('find');
+        $method->addParameter('id');
+        $method->addParameter('lockMode', null);
+        $method->addParameter('lockVersion', null);
+        $method->setReturnType($moduleNamespace . '\\Entity\\' . $entityName);
+        $method->setBody('        /** @var ' . $entityName . ' $' . $name .' */
+$' . $name . ' =  parent::find($id, $lockMode, $lockVersion);
+if (!$' . $name . ') {
+    throw new EntityNotFoundException(\'' . $entityName . ' not found.\', 404);
+}
+
+return $' . $name . ';');
+        $method->addComment('@param int $id');
+        $method->addComment('@param int|null $lockMode');
+        $method->addComment('@param int|null $lockVersion');
+        $method->addComment('@return ' . $entityName);
+        $method->addComment('@throws \Doctrine\ORM\ORMException');
+
+
+        // save
         $method = $class->addMethod('save');
-        $method->addParameter($name)->setTypeHint($nameSpace . '\\' . $entityName  . '\\Entity\\' . $entityName);
+        $method->addParameter($name)->setTypeHint($moduleNamespace  . '\\Entity\\' . $entityName);
         $method->setBody('if(!$' . $name . '->getID()) {
     $this->_em->persist($' . $name . ');
 }
 $this->_em->flush($' . $name . ');
+
 return $' . $name . ';');
+        $method->setReturnType($moduleNamespace . '\\Entity\\' . $entityName);
         $method->addComment('@param ' . $entityName . ' $' . $name);
         $method->addComment('@return $' . $name);
         $method->addComment('@throws \Doctrine\ORM\ORMException');
         $method->addComment('@throws \Doctrine\ORM\OptimisticLockException');
 
+        // delete
         $method = $class->addMethod('delete');
         $method->addParameter($name)->setTypeHint($nameSpace . '\\' . $entityName   . '\\Entity\\' . $entityName);
         $method->setBody('$this->_em->remove($'. $name . ');
 $this->_em->flush($'. $name . ');');
+        $method->setReturnType('void');
         $method->addComment('@param ' . $entityName . ' $' . $name);
         $method->addComment('@throws \Doctrine\ORM\OptimisticLockException');
         $method->addComment('@throws \Doctrine\ORM\ORMException');
 
+
+        // get total count
+        $method = $class->addMethod('getTotal' . $entityName . 'Count');
+        $letter = $name[0];
+        $method->setBody('        $qb = $this->createQueryBuilder(\'' . $letter .'\');
+$qb->select(\'count(' . $letter .'.id)\');
+$query = $qb->getQuery();
+
+return (int) $query->getSingleScalarResult();');
+        $method->setReturnType('int');
+        $method->addComment('@return int');
+        $method->addComment('@throws \Doctrine\ORM\NoResultException');
+        $method->addComment('@throws \Doctrine\ORM\NonUniqueResultException');
+
         $printer = new PsrPrinter();
-        $code = "<?php\n\n" . $printer->printNamespace($namespace);
+        $code = $printer->printFile($file);
         file_put_contents('build/' . $this->buildId . '/' . $entityName . '/Repository/' . $entityName . 'Repository.php', $code);
 
         return true;
-
-
     }
 
     /**
