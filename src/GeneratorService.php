@@ -92,7 +92,7 @@ class GeneratorService
         $file = new PhpFile();
         $file->setStrictTypes();
         $moduleNamespace = $nameSpace . '\\' . $entityName;
-        $namespace = $file->addNamespace($moduleNamespace . '\\' . $entityName . 'Controller');
+        $namespace = $file->addNamespace($moduleNamespace . '\\' . 'Controller');
         $name = lcfirst($entityName);
 
         $namespace->addUse($moduleNamespace . '\\Collection\\' . $entityName . 'Collection');
@@ -108,6 +108,12 @@ class GeneratorService
         $property = $class->addProperty('service');
         $property->addComment('@param ' . $entityName . 'Service $service');
         $property->setVisibility('private');
+
+        // constructor
+        $method = $class->addMethod('__construct');
+        $method->addComment('@param ' . $entityName . 'Service $service');
+        $method->addParameter('service' )->setTypeHint($moduleNamespace . '\\Service\\' . $entityName . 'Service');
+
 
         // index action
         $method = $class->addMethod('indexAction');
@@ -333,7 +339,7 @@ use Del\Icon;
         $namespace->addUse('Doctrine\ORM\Mapping', 'ORM');
         $namespace->addUse('JsonSerializable');
         $class = new ClassType($entityName);
-        $class->addComment('@ORM\Entity(repositoryClass="\\' . $nameSpace . '\Repository\\' . $entityName . 'Repository")');
+        $class->addComment('@ORM\Entity(repositoryClass="\\' . $nameSpace . '\\' . $entityName . '\Repository\\' . $entityName . 'Repository")');
 
         $id = $class->addProperty('id');
         $id->setVisibility('private');
@@ -820,20 +826,41 @@ return $repository;');
         // add to container
         $method = $class->addMethod('addToContainer');
         $method->addParameter('c')->setTypeHint('Barnacle\Container');
-        $method->setBody('/** @var EntityManager $em */
-$em = $c[\'doctrine.entity_manager\'];
-$c[\'service.' . $entityName . '\'] = new ' . $entityName . 'Service($em);');
+        $method->setBody('/** @var PlatesEngine $viewEngine */
+$viewEngine = $c->get(PlatesEngine::class);
+$viewEngine->addFolder(\'' . $name . '\', \'src/' . $entityName . '/View/' . $entityName . '/\');
+
+$c[' . $entityName . 'Service::class] = $c->factory(function (Container $c) {
+    $em =  $c->get(EntityManager::class);
+    return new ' . $entityName . 'Service($em);
+});
+
+$c[' . $entityName . 'Controller::class] = $c->factory(function (Container $c) {
+    $service = $c->get(' . $entityName . 'Service::class);
+    /** @var PlatesEngine $viewEngine */
+    $viewEngine = $c->get(PlatesEngine::class);
+
+    return new ' . $entityName . 'Controller($viewEngine, $service);
+});
+
+$c[' . $entityName . 'ApiController::class] = $c->factory(function (Container $c) {
+    $service = $c->get(' . $entityName . 'Service::class);
+
+    return new ' . $entityName . 'ApiController($service);
+});');
         $method->addComment('@param Container $c');
 
         // getEntityPath
         $method = $class->addMethod('getEntityPath');
-        $method->setBody("return 'build/" . $this->buildId . "/src/" . $entityName . "/Entity';");
+        $method->setBody("return '/src/" . $entityName . "/Entity';");
         $method->addComment('@return string');
+        $method->setReturnType('string');
 
         // hasEntityPath
         $method = $class->addMethod('hasEntityPath');
         $method->setBody("return true;");
         $method->addComment('@return bool');
+        $method->setReturnType('bool');
 
         // addRoutes
         $method = $class->addMethod('addRoutes');
@@ -870,7 +897,7 @@ $router->group(\'/api\', function (RouteGroup $route) {
 return $router;');
 
         $printer = new PsrPrinter();
-        $code = "<?php\n\n" . $printer->printFile($file);
+        $code = $printer->printFile($file);
         file_put_contents('build/' . $this->buildId . '/' . $entityName . '/' . $entityName . 'Package.php', $code);
 
         return true;
@@ -1012,6 +1039,7 @@ return $router;');
 
         // constructor
         $method = $class->addMethod('__construct');
+        $method->addParameter('view')->setTypeHint('Bone\Mvc\View\ViewEngine');
         $method->addParameter('service')->setTypeHint($nameSpace . '\\' . $entityName  . '\\Service\\' . $entityName . 'Service');
         $method->setBody('$this->service = $service;');
         $method->addComment('@param ' . $entityName . 'Service' . ' $service');
