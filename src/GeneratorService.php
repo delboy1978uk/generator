@@ -350,6 +350,7 @@ use Del\Icon;
 
         $method = $class->addMethod('getId');
         $method->setReturnType('int');
+        $method->setReturnNullable();
         $method->setBody('return $this->id;');
         $method->addComment('@return int');
 
@@ -1024,6 +1025,7 @@ return $router;');
         $property = $class->addProperty('numPerPage');
         $property->addComment('@var int $numPerPage');
         $property->setVisibility('private');
+        $property->setValue(10);
 
         $property = $class->addProperty('paginator');
         $property->addComment('@var Paginator $paginator');
@@ -1041,7 +1043,9 @@ return $router;');
         $method = $class->addMethod('__construct');
         $method->addParameter('view')->setTypeHint('Bone\Mvc\View\ViewEngine');
         $method->addParameter('service')->setTypeHint($nameSpace . '\\' . $entityName  . '\\Service\\' . $entityName . 'Service');
-        $method->setBody('$this->service = $service;');
+        $method->setBody('$this->paginator = new Paginator();
+$this->service = $service;
+$this->view = $view;');
         $method->addComment('@param ' . $entityName . 'Service' . ' $service');
 
 
