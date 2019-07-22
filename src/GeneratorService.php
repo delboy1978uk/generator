@@ -113,6 +113,7 @@ class GeneratorService
         $method = $class->addMethod('__construct');
         $method->addComment('@param ' . $entityName . 'Service $service');
         $method->addParameter('service' )->setTypeHint($moduleNamespace . '\\Service\\' . $entityName . 'Service');
+        $method->setBody('$this->service = $service;' );
 
 
         // index action
@@ -216,7 +217,7 @@ return new JsonResponse([
 
 
         // delete action
-        $method = $class->addMethod('updateAction');
+        $method = $class->addMethod('deleteAction');
         $method->addComment('@param ServerRequestInterface $request');
         $method->addComment('@param array $args');
         $method->addComment('@return ResponseInterface');
