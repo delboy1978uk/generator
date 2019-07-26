@@ -77,9 +77,13 @@ class FormGenerator extends FileGenerator
                 $body = '$' . $field['name'] . ' = new Text(\'' . $field['name'] . '\');' . "\n";
                 $body .= '$' . $field['name'] . "->setClass('form-control datepicker');\n";
                 break;
+            case 'datetime':
+                $body = '$' . $field['name'] . ' = new Text(\'' . $field['name'] . '\');' . "\n";
+                $body .= '$' . $field['name'] . "->setClass('form-control datetimepicker');\n";
+                break;
+            case 'varchar':
             default:
-                $fieldClass = 'Text';
-                $body = '$' . $field['name'] . ' = new ' . $fieldClass . '(\'' . $field['name'] . '\');' . "\n";
+                $body = '$' . $field['name'] . ' = new Text(\'' . $field['name'] . '\');' . "\n";
         }
 
         $body .= '$' . $field['name'] . '->setLabel(\'' . ucfirst($field['name']) . '\');' . "\n";

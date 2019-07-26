@@ -64,15 +64,27 @@ return $this->updateFromArray($' . $name . ', $data);';
         $method->setReturnType($moduleNamespace . '\\Entity\\' . $entityName);
         $body = 'isset($data[\'id\']) ? $' . $name . '->setId($data[\'id\']) : null;' . "\n";
         foreach ($fields as $field) {
-            if (in_array($field['type'], ['date', 'datetime'])) {
-                $namespace->addUse('DateTime');
-                $body .= "\n" . 'if (isset($data[\'' . $field['name'] . '\']) && !empty($data[\'' . $field['name'] . '\'])) {
+            switch ($field['type']) {
+                case 'date':
+                    $body .= "\n" . 'if (isset($data[\'' . $field['name'] . '\'])) {
     $' . $field['name'] . ' = $data[\'' . $field['name'] . '\'] instanceof DateTime ? $data[\'' . $field['name'] . '\'] : DateTime::createFromFormat(\'d/m/Y\', $data[\'' . $field['name'] . '\']);
+    $' . $field['name'] . ' = $' . $field['name'] . ' ?: null;
     $' . $name . '->set' . ucfirst($field['name']) . '($' . $field['name'] . ');
 }' . "\n";
-            } else {
-                $body .= 'isset($data[\'' . $field['name'] . '\']) ? $' . $name . '->set' . ucfirst($field['name']) . '($data[\'' . $field['name'] . '\']) : null;' . "\n";
+                    break;
+                case 'datetime':
+                    $body .= "\n" . 'if (isset($data[\'' . $field['name'] . '\'])) {
+    $' . $field['name'] . ' = $data[\'' . $field['name'] . '\'] instanceof DateTime ? $data[\'' . $field['name'] . '\'] : DateTime::createFromFormat(\'d/m/Y H:i\', $data[\'' . $field['name'] . '\']);
+    $' . $field['name'] . ' = $' . $field['name'] . ' ?: null;
+    $' . $name . '->set' . ucfirst($field['name']) . '($' . $field['name'] . ');
+}' . "\n";
+                    break;
+                default:
+                    $body .= 'isset($data[\'' . $field['name'] . '\']) ? $' . $name . '->set' . ucfirst($field['name']) . '($data[\'' . $field['name'] . '\']) : null;' . "\n";
             }
+                $namespace->addUse('DateTime');
+
+
         }
         $body .= "\nreturn $" . $name . ';';
         reset($fields);

@@ -109,13 +109,18 @@ class EntityGenerator extends FileGenerator
             $method->setBody('return $this->' . $name . ';');
             $method->addComment('@return ' . $var);
             $method->setReturnType($var);
+            $nullableTypeDoc = '';
             if ($fieldInfo['nullable']) {
                 $method->setReturnNullable();
+                $nullableTypeDoc = '|null';
             }
 
             $method = $class->addMethod('set' . ucfirst($name));
-            $method->addParameter($name)->setTypeHint($typeHint);
-            $method->addComment('@param ' . $var . ' $' . $name);
+            $parameter = $method->addParameter($name)->setTypeHint($typeHint);
+            if ($fieldInfo['nullable']) {
+                $parameter->setNullable(true);
+            }
+            $method->addComment('@param ' . $var . $nullableTypeDoc . ' $' . $name);
             $method->setBody('$this->' . $name . ' = $' . $name . ';');
             $method->setReturnType('void');
         }
@@ -136,7 +141,7 @@ class EntityGenerator extends FileGenerator
                     break;
                 case 'datetime':
                     $addDateFormatParam = true;
-                    $body .= "    '{$field['name']}' => ($" . $field['name'] . " = \$this->get" . ucfirst($field['name']) . "()) ? $" . $field['name'] . "->format(\$dateFormat . ' H:i:s') : null,\n";
+                    $body .= "    '{$field['name']}' => ($" . $field['name'] . " = \$this->get" . ucfirst($field['name']) . "()) ? $" . $field['name'] . "->format(\$dateFormat . ' H:i') : null,\n";
                     break;
                 case 'varchar':
                 default:
