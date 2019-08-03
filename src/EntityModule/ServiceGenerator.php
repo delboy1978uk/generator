@@ -79,6 +79,12 @@ return $this->updateFromArray($' . $name . ', $data);';
     $' . $name . '->set' . ucfirst($field['name']) . '($' . $field['name'] . ');
 }' . "\n";
                     break;
+                case 'bool':
+                    $body .= 'isset($data[\'' . $field['name'] . '\']) ? $' . $name . '->set' . ucfirst($field['name']) . '((bool) $data[\'' . $field['name'][0] . '\']) : null;' . "\n";
+                    break;
+                case 'int':
+                    $body .= 'isset($data[\'' . $field['name'] . '\']) ? $' . $name . '->set' . ucfirst($field['name']) . '((int) $data[\'' . $field['name'] . '\']) : null;' . "\n";
+                    break;
                 default:
                     $body .= 'isset($data[\'' . $field['name'] . '\']) ? $' . $name . '->set' . ucfirst($field['name']) . '($data[\'' . $field['name'] . '\']) : null;' . "\n";
             }

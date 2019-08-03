@@ -134,6 +134,8 @@ class GeneratorCommand extends Command
                     $askForValues = true;
                     break;
                 case 'checkbox':
+                    $field['form']['values']  = [1 => ''];
+                    break;
                 case 'file':
                 case 'text':
                 case 'textarea':
@@ -184,7 +186,12 @@ class GeneratorCommand extends Command
         }
     }
 
-    private function generateFromConfigFile(InputInterface $input, OutputInterface $output)
+    /**
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @throws \Exceptio
+     */
+    private function generateFromConfigFile(InputInterface $input, OutputInterface $output): void
     {
         $filename = $input->getOption('load') ?: 'generator';
         $filename = str_replace('.json', '', $filename);

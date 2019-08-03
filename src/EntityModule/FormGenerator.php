@@ -3,11 +3,17 @@
 namespace Del\Generator\EntityModule;
 
 use Del\Form\AbstractForm;
+use Del\Form\Field\CheckBox;
+use Del\Form\Field\FileUpload;
+use Del\Form\Field\Radio;
+use Del\Form\Field\Select;
 use Del\Form\Field\Submit;
 use Del\Form\Field\Text;
+use Del\Form\Field\TextArea;
 use Del\Generator\FileGenerator;
 use Nette\PhpGenerator\ClassType;
 use Nette\PhpGenerator\PhpFile;
+use Nette\PhpGenerator\PhpNamespace;
 use Nette\PhpGenerator\PsrPrinter;
 
 class FormGenerator extends FileGenerator
@@ -28,11 +34,10 @@ class FormGenerator extends FileGenerator
         $namespace->addUse($moduleNamespace . '\\Entity\\' . $entityName);
         $namespace->addUse(AbstractForm::class);
         $namespace->addUse(Submit::class);
-        $namespace->addUse(Text::class);
+        $this->addElementUseStatements($namespace, $fields);
 
         $class = new ClassType($entityName . 'Form');
         $class->addExtend(AbstractForm::class);
-
         $namespace->add($class);
 
         // getEntityPath
@@ -49,10 +54,39 @@ class FormGenerator extends FileGenerator
     }
 
     /**
+     * @param PhpNamespace $namespace
+     * @param array $fields
+     */
+    private function addElementUseStatements(PhpNamespace $namespace, array $fields): void
+    {
+        $used = [];
+        foreach ($fields as $field) {
+            $type = $field['form']['type'];
+            if (!in_array($type, $used)) {
+                $used[] = $type;
+            }
+        }
+        reset($fields);
+
+        $formClasses  =  [
+            'checkbox' => CheckBox::class,
+            'file' => FileUpload::class,
+            'radio' => Radio::class,
+            'select' => Select::class,
+            'text' => Text::class,
+            'textarea' => TextArea::class,
+        ];
+
+        foreach ($used as $use) {
+            $namespace->addUse($formClasses[$use]);
+        }
+    }
+
+    /**
      * @param array $fields
      * @return string
      */
-    private function createFormInitMethod(array $fields)
+    private function createFormInitMethod(array $fields): string
     {
         $body = '';
 
@@ -70,20 +104,24 @@ class FormGenerator extends FileGenerator
      * @param array $field
      * @return string
      */
-    private function createFieldInitMethod(array $field)
+    private function createFieldInitMethod(array $field): string
     {
+        $addOptions = false;
         switch ($field['form']['type']) {
             case 'checkbox':
                 $body = $this->createFieldObject( $field['name'], 'CheckBox');
+                $addOptions = true;
                 break;
             case 'file':
                 $body = $this->createFieldObject( $field['name'], 'FileUpload');
                 break;
             case 'radio':
                 $body = $this->createFieldObject( $field['name'], 'Radio');
+                $addOptions = true;
                 break;
             case 'select':
                 $body = $this->createFieldObject( $field['name'], 'Select');
+                $addOptions = true;
                 break;
             case 'textarea':
                 $body = $this->createFieldObject( $field['name'], 'TextArea');
@@ -101,6 +139,10 @@ class FormGenerator extends FileGenerator
                 $body .= $this->addClassToField($field['name'], 'form-control datetimepicker');
                 break;
             default:
+        }
+
+        if ($addOptions) {
+            $body .= $this->setOptions($field['name'], $field['form']['values']);
         }
 
         $body .= $this->setFieldLabel($field['name'], $field['form']['label']);
@@ -133,7 +175,23 @@ class FormGenerator extends FileGenerator
      * @param string $label
      * @return string
      */
-    private function setFieldLabel(string $fieldName, string $label)
+    private function setOptions(string $fieldName, array $options): string
+    {
+        $body = '$' . $fieldName . '->setOptions([' . "\n";
+        foreach ($options as $key => $value) {
+            $key = is_int($key) ? $key : "'$key'";
+            $value = is_numeric($value) ? $value : "'$value'";
+            $body .= "     $key => $value,\n";
+        }
+        return $body . "]);\n";
+    }
+
+    /**
+     * @param string $fieldName
+     * @param string $label
+     * @return string
+     */
+    private function setFieldLabel(string $fieldName, string $label): string
     {
         return '$' . $fieldName . '->setLabel(\'' . $label . '\');' . "\n";
     }
@@ -143,7 +201,7 @@ class FormGenerator extends FileGenerator
      * @param string $class
      * @return string
      */
-    private function createFieldObject(string $fieldName, string $class)
+    private function createFieldObject(string $fieldName, string $class): string
     {
         return '$' . $fieldName . ' = new ' . $class .'(\'' . $fieldName . '\');' . "\n";
     }
@@ -153,7 +211,7 @@ class FormGenerator extends FileGenerator
      * @param string $class
      * @return string
      */
-    private function addClassToField(string $fieldName, string $class)
+    private function addClassToField(string $fieldName, string $class): string
     {
         return '$' . $fieldName . "->setClass('" . $class . "');\n";
     }
