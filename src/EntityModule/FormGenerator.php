@@ -72,21 +72,38 @@ class FormGenerator extends FileGenerator
      */
     private function createFieldInitMethod(array $field)
     {
-        switch ($field['type']) {
-            case 'date':
-                $body = '$' . $field['name'] . ' = new Text(\'' . $field['name'] . '\');' . "\n";
-                $body .= '$' . $field['name'] . "->setClass('form-control datepicker');\n";
+        switch ($field['form']['type']) {
+            case 'checkbox':
+                $body = $this->createFieldObject( $field['name'], 'CheckBox');
                 break;
-            case 'datetime':
-                $body = '$' . $field['name'] . ' = new Text(\'' . $field['name'] . '\');' . "\n";
-                $body .= '$' . $field['name'] . "->setClass('form-control datetimepicker');\n";
+            case 'file':
+                $body = $this->createFieldObject( $field['name'], 'FileUpload');
                 break;
-            case 'varchar':
+            case 'radio':
+                $body = $this->createFieldObject( $field['name'], 'Radio');
+                break;
+            case 'select':
+                $body = $this->createFieldObject( $field['name'], 'Select');
+                break;
+            case 'textarea':
+                $body = $this->createFieldObject( $field['name'], 'TextArea');
+                break;
+            case 'text':
             default:
-                $body = '$' . $field['name'] . ' = new Text(\'' . $field['name'] . '\');' . "\n";
+                $body = $this->createFieldObject( $field['name'], 'Text');
         }
 
-        $body .= '$' . $field['name'] . '->setLabel(\'' . ucfirst($field['name']) . '\');' . "\n";
+        switch ($field['type']) {
+            case 'date':
+                $body .= $this->addClassToField($field['name'],'form-control datepicker');
+                break;
+            case 'datetime':
+                $body .= $this->addClassToField($field['name'], 'form-control datetimepicker');
+                break;
+            default:
+        }
+
+        $body .= $this->setFieldLabel($field['name'], $field['form']['label']);
 
         if (!$field['nullable']) {
             $body .= '$' . $field['name'] . '->setRequired(true);' . "\n";
@@ -109,5 +126,35 @@ class FormGenerator extends FileGenerator
         $body .= '$this->addField($' . $field['name'] . ');' . "\n\n";
 
         return $body;
+    }
+
+    /**
+     * @param string $fieldName
+     * @param string $label
+     * @return string
+     */
+    private function setFieldLabel(string $fieldName, string $label)
+    {
+        return '$' . $fieldName . '->setLabel(\'' . $label . '\');' . "\n";
+    }
+
+    /**
+     * @param string $fieldName
+     * @param string $class
+     * @return string
+     */
+    private function createFieldObject(string $fieldName, string $class)
+    {
+        return '$' . $fieldName . ' = new ' . $class .'(\'' . $fieldName . '\');' . "\n";
+    }
+
+    /**
+     * @param string $fieldName
+     * @param string $class
+     * @return string
+     */
+    private function addClassToField(string $fieldName, string $class)
+    {
+        return '$' . $fieldName . "->setClass('" . $class . "');\n";
     }
 }
