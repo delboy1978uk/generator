@@ -52,6 +52,7 @@ $viewEngine->addFolder(\'' . $name . '\', \'src/' . $entityName . '/View/' . $en
 
 $c[' . $entityName . 'Service::class] = $c->factory(function (Container $c) {
     $em =  $c->get(EntityManager::class);
+    
     return new ' . $entityName . 'Service($em);
 });
 

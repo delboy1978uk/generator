@@ -23,6 +23,7 @@ class EntityGenerator extends FileGenerator
         $namespace->addUse('Doctrine\ORM\Mapping', 'ORM');
         $namespace->addUse('JsonSerializable');
         $class = new ClassType($entityName);
+        $class->addImplement('JsonSerializable');
         $class->addComment('@ORM\Entity(repositoryClass="\\' . $nameSpace . '\\' . $entityName . '\Repository\\' . $entityName . 'Repository")');
 
         $id = $class->addProperty('id');

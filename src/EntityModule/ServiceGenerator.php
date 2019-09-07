@@ -64,29 +64,40 @@ return $this->updateFromArray($' . $name . ', $data);';
         $method->setReturnType($moduleNamespace . '\\Entity\\' . $entityName);
         $body = 'isset($data[\'id\']) ? $' . $name . '->setId($data[\'id\']) : null;' . "\n";
         foreach ($fields as $field) {
+            $isRequired = !$field['nullable'];
             switch ($field['type']) {
                 case 'date':
-                    $body .= "\n" . 'if (isset($data[\'' . $field['name'] . '\'])) {
+                    $body .= "\n";
+                    if (!$isRequired) {
+                        $body .=  '$' . $name . '->set' . ucfirst($field['name']) . '(null);' . "\n";
+                    }
+                    $body .= 'if (isset($data[\'' . $field['name'] . '\'])) {
     $' . $field['name'] . ' = $data[\'' . $field['name'] . '\'] instanceof DateTime ? $data[\'' . $field['name'] . '\'] : DateTime::createFromFormat(\'d/m/Y\', $data[\'' . $field['name'] . '\']);
     $' . $field['name'] . ' = $' . $field['name'] . ' ?: null;
     $' . $name . '->set' . ucfirst($field['name']) . '($' . $field['name'] . ');
 }' . "\n";
                     break;
                 case 'datetime':
-                    $body .= "\n" . 'if (isset($data[\'' . $field['name'] . '\'])) {
+                    $body .= "\n";
+                    if (!$isRequired) {
+                        $body .=  '$' . $name . '->set' . ucfirst($field['name']) . '(null);' . "\n";
+                    }
+                    $body .= 'if (isset($data[\'' . $field['name'] . '\'])) {
     $' . $field['name'] . ' = $data[\'' . $field['name'] . '\'] instanceof DateTime ? $data[\'' . $field['name'] . '\'] : DateTime::createFromFormat(\'d/m/Y H:i\', $data[\'' . $field['name'] . '\']);
     $' . $field['name'] . ' = $' . $field['name'] . ' ?: null;
     $' . $name . '->set' . ucfirst($field['name']) . '($' . $field['name'] . ');
 }' . "\n";
                     break;
                 case 'bool':
-                    $body .= 'isset($data[\'' . $field['name'] . '\']) ? $' . $name . '->set' . ucfirst($field['name']) . '((bool) $data[\'' . $field['name'][0] . '\']) : null;' . "\n";
+                    $body .= '$' . $name . '->set' . ucfirst($field['name']) . '(isset($data[\'' . $field['name'] . '\']));' . "\n";
                     break;
                 case 'int':
+                    $nullSetter = $isRequired ? '0' : 'null';
                     $body .= 'isset($data[\'' . $field['name'] . '\']) ? $' . $name . '->set' . ucfirst($field['name']) . '((int) $data[\'' . $field['name'] . '\']) : null;' . "\n";
                     break;
                 default:
-                    $body .= 'isset($data[\'' . $field['name'] . '\']) ? $' . $name . '->set' . ucfirst($field['name']) . '($data[\'' . $field['name'] . '\']) : null;' . "\n";
+                    $nullSetter = $isRequired ? "''" : 'null';
+                    $body .= 'isset($data[\'' . $field['name'] . '\']) ? $' . $name . '->set' . ucfirst($field['name']) . '($data[\'' . $field['name'] . '\']) : $' . $name . '->set' . ucfirst($field['name']) . '(' . $nullSetter . ');' . "\n";
             }
                 $namespace->addUse('DateTime');
 
