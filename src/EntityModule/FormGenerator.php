@@ -15,6 +15,7 @@ use Nette\PhpGenerator\ClassType;
 use Nette\PhpGenerator\PhpFile;
 use Nette\PhpGenerator\PhpNamespace;
 use Nette\PhpGenerator\PsrPrinter;
+use Zend\I18n\Validator\IsFloat;
 
 class FormGenerator extends FileGenerator
 {
@@ -138,6 +139,14 @@ class FormGenerator extends FileGenerator
             case 'datetime':
                 $body .= $this->addClassToField($field['name'], 'form-control datetimepicker');
                 break;
+            case 'decimal':
+            case 'double':
+            case 'float':
+                $body .= $this->addValidator($field['name'], IsFloat::class);
+                break;
+            case 'int':
+                $body .= $this->addValidator($field['name'], IsInt::class);
+                break;
             default:
         }
 
@@ -168,6 +177,18 @@ class FormGenerator extends FileGenerator
         $body .= '$this->addField($' . $field['name'] . ');' . "\n\n";
 
         return $body;
+    }
+
+    /**
+     * @param string $fieldName
+     * @param $validatorClass
+     * @return string
+     */
+    private function addValidator(string $fieldName, $validatorClass): string
+    {
+        $validatorVarName = end(explode('\'', $validatorClass));
+        $body =  '$' . ucfirst($validatorVarName) . ' = new ' . $validatorVarName . ";\n";
+        $body .= '$' . $fieldName . '->addValidator()' . "\n";
     }
 
     /**

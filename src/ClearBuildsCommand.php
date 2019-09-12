@@ -36,7 +36,8 @@ class ClearBuildsCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $output->writeln('Deleting old builds...');
-        $folders = glob('./build/*');
+        $folders = glob('./build/_gen*');
+
         foreach ($folders as $folder) {
             $this->deleteDir($folder);
             $output->writeln('Removing ' . $folder);
@@ -46,14 +47,18 @@ class ClearBuildsCommand extends Command
     /**
      * @param string $dirPath
      */
-    private static function deleteDir(string $dirPath) {
-        if (! is_dir($dirPath)) {
+    private static function deleteDir(string $dirPath)
+    {
+        if (!is_dir($dirPath)) {
             throw new InvalidArgumentException("$dirPath must be a directory");
         }
+
         if (substr($dirPath, strlen($dirPath) - 1, 1) != '/') {
             $dirPath .= '/';
         }
+
         $files = glob($dirPath . '*', GLOB_MARK);
+
         foreach ($files as $file) {
             if (is_dir($file)) {
                 self::deleteDir($file);
@@ -61,6 +66,7 @@ class ClearBuildsCommand extends Command
                 unlink($file);
             }
         }
+
         rmdir($dirPath);
     }
 }
