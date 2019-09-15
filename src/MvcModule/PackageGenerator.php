@@ -43,7 +43,7 @@ class PackageGenerator extends FileGenerator
         $method->addParameter('c')->setTypeHint('Barnacle\Container');
         $method->setBody('/** @var PlatesEngine $viewEngine */
 $viewEngine = $c->get(PlatesEngine::class);
-$viewEngine->addFolder(\'' . $name . '\', \'src/' . $moduleName . '/View/' . $moduleName . '/\');
+$viewEngine->addFolder(\'' . $name . '\', __DIR__ . \'/View/' . $moduleName . '/\');
 
 $c[' . $moduleName . 'Controller::class] = $c->factory(function (Container $c) {
     /** @var PlatesEngine $viewEngine */

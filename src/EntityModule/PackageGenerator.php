@@ -48,7 +48,7 @@ class PackageGenerator extends FileGenerator
         $method->addParameter('c')->setTypeHint('Barnacle\Container');
         $method->setBody('/** @var PlatesEngine $viewEngine */
 $viewEngine = $c->get(PlatesEngine::class);
-$viewEngine->addFolder(\'' . $name . '\', \'src/' . $entityName . '/View/' . $entityName . '/\');
+$viewEngine->addFolder(\'' . $name . '\', __DIR__ . \'/View/' . $entityName . '/\');
 
 $c[' . $entityName . 'Service::class] = $c->factory(function (Container $c) {
     $em =  $c->get(EntityManager::class);
@@ -73,7 +73,7 @@ $c[' . $entityName . 'ApiController::class] = $c->factory(function (Container $c
 
         // getEntityPath
         $method = $class->addMethod('getEntityPath');
-        $method->setBody("return '/src/" . $entityName . "/Entity';");
+        $method->setBody("return __DIR__ . '/Entity';");
         $method->addComment('@return string');
         $method->setReturnType('string');
 
