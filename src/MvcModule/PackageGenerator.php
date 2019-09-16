@@ -3,7 +3,6 @@
 namespace Del\Generator\MvcModule;
 
 use Del\Generator\FileGenerator;
-use Nette\PhpGenerator\ClassType;
 use Nette\PhpGenerator\PhpFile;
 use Nette\PhpGenerator\PsrPrinter;
 

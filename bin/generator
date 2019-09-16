@@ -11,6 +11,7 @@ use Del\Generator\ClearBuildsCommand;
 use Del\Generator\BlankModuleCommand;
 use Del\Generator\GeneratorCommand;
 use Del\Generator\MvcModuleCommand;
+use Del\Generator\VendorPackageCommand;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Helper\HelperSet;
 use Symfony\Component\Console\Helper\QuestionHelper;
@@ -38,6 +39,7 @@ if (empty($config)) {
     $blankCommand = new BlankModuleCommand();
     $mvcCommand = new MvcModuleCommand();
     $clearCommand = new ClearBuildsCommand();
+    $packageCommand = new VendorPackageCommand();
 
     $app = new Application('Entity Generator');
     $app->setHelperSet($helperSet);
@@ -45,5 +47,6 @@ if (empty($config)) {
     $app->add($generatorCommand);
     $app->add($mvcCommand);
     $app->add($clearCommand);
+    $app->add($packageCommand);
     $app->run();
 }
