@@ -174,7 +174,7 @@ return [
                 ],
                 'autoload' => [
                     'psr-4' => [
-                        $namespace => 'src/'
+                        $namespace . '\\\\' => 'src/'
                     ],
                 ],
             ];
