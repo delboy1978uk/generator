@@ -25,7 +25,7 @@ class ControllerGenerator extends FileGenerator
         $namespace = $file->addNamespace($moduleNamespace . '\\Controller');
 
         $namespace->addUse($moduleNamespace . '\\Entity\\' . $entityName);
-        $namespace->addUse('Bone\Mvc\View\ViewEngine');
+        $namespace->addUse('Bone\View\ViewEngine');
         $namespace->addUse('Bone\View\Helper\AlertBox');
         $namespace->addUse('Bone\View\Helper\Paginator');
         $namespace->addUse($moduleNamespace . '\\Collection\\' . $entityName . 'Collection');
@@ -60,7 +60,7 @@ class ControllerGenerator extends FileGenerator
 
         // constructor
         $method = $class->addMethod('__construct');
-        $method->addParameter('view')->setTypeHint('Bone\Mvc\View\ViewEngine');
+        $method->addParameter('view')->setTypeHint('Bone\View\ViewEngine');
         $method->addParameter('service')->setTypeHint($nameSpace . '\\' . $entityName . '\\Service\\' . $entityName . 'Service');
         $method->setBody('$this->paginator = new Paginator();
 $this->service = $service;

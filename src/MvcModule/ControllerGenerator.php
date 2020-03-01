@@ -24,7 +24,7 @@ class ControllerGenerator extends FileGenerator
         $moduleNamespace = $nameSpace . '\\' . $moduleName;
         $namespace = $file->addNamespace($moduleNamespace . '\\Controller');
 
-        $namespace->addUse('Bone\Mvc\View\ViewEngine');
+        $namespace->addUse('Bone\View\ViewEngine');
         $namespace->addUse(ResponseInterface::class);
         $namespace->addUse(ServerRequestInterface::class);
         $namespace->addUse('Zend\Diactoros\Response\HtmlResponse');
@@ -37,7 +37,7 @@ class ControllerGenerator extends FileGenerator
 
         // constructor
         $method = $class->addMethod('__construct');
-        $method->addParameter('view')->setTypeHint('Bone\Mvc\View\ViewEngine');
+        $method->addParameter('view')->setTypeHint('Bone\View\ViewEngine');
         $method->setBody('$this->view = $view;');
         
         // indexAction

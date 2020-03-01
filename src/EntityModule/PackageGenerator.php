@@ -29,7 +29,7 @@ class PackageGenerator extends FileGenerator
         $namespace->addUse('Bone\Http\Middleware\HalCollection');
         $namespace->addUse('Bone\Http\Middleware\HalEntity');
         $namespace->addUse('Bone\Mvc\Router\RouterConfigInterface');
-        $namespace->addUse('Bone\Mvc\View\PlatesEngine');
+        $namespace->addUse('Bone\View\PlatesEngine');
         $namespace->addUse($moduleNamespace . '\\Controller\\' . $entityName . 'ApiController');
         $namespace->addUse($moduleNamespace . '\\Controller\\' . $entityName . 'Controller');
         $namespace->addUse($moduleNamespace . '\\Service\\' . $entityName . 'Service');

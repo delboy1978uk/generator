@@ -25,7 +25,7 @@ class PackageGenerator extends FileGenerator
         $namespace->addUse('Barnacle\Container');
         $namespace->addUse('Barnacle\RegistrationInterface');
         $namespace->addUse('Bone\Mvc\Router\RouterConfigInterface');
-        $namespace->addUse('Bone\Mvc\View\PlatesEngine');
+        $namespace->addUse('Bone\View\PlatesEngine');
         $namespace->addUse($moduleNamespace . '\\Controller\\' . $moduleName . 'ApiController');
         $namespace->addUse($moduleNamespace . '\\Controller\\' . $moduleName . 'Controller');
         $namespace->addUse('League\Route\RouteGroup');
