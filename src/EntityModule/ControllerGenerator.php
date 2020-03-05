@@ -37,7 +37,7 @@ class ControllerGenerator extends FileGenerator
         $namespace->addUse('Del\Icon');
         $namespace->addUse(ResponseInterface::class);
         $namespace->addUse(ServerRequestInterface::class);
-        $namespace->addUse('Zend\Diactoros\Response\HtmlResponse');
+        $namespace->addUse('Laminas\Diactoros\Response\HtmlResponse');
 
         $class = $namespace->addClass($entityName . 'Controller');
 
@@ -231,7 +231,9 @@ return new HtmlResponse($body);');
         $method->setVisibility('private');
         $method->addParameter('message')->setTypeHint('string');
         $method->addParameter('class')->setTypeHint('string');
-        $method->setBody('return AlertBox::alertBox([
+        $method->setBody('$helper = new AlertBox();
+
+        return $helper->alertBox([
     \'message\' => $message,
     \'class\' => $class,
 ]);');

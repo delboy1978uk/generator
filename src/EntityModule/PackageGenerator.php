@@ -24,20 +24,19 @@ class PackageGenerator extends FileGenerator
         $namespace = $file->addNamespace($moduleNamespace);
 
         $namespace->addUse('Barnacle\Container');
-        $namespace->addUse('Barnacle\Exception\NotFoundException');
         $namespace->addUse('Barnacle\RegistrationInterface');
         $namespace->addUse('Bone\Http\Middleware\HalCollection');
         $namespace->addUse('Bone\Http\Middleware\HalEntity');
-        $namespace->addUse('Bone\Mvc\Router\RouterConfigInterface');
+        $namespace->addUse('Bone\Router\Router');
+        $namespace->addUse('Bone\Router\RouterConfigInterface');
         $namespace->addUse('Bone\View\ViewEngine');
         $namespace->addUse($moduleNamespace . '\\Controller\\' . $entityName . 'ApiController');
         $namespace->addUse($moduleNamespace . '\\Controller\\' . $entityName . 'Controller');
         $namespace->addUse($moduleNamespace . '\\Service\\' . $entityName . 'Service');
         $namespace->addUse('Doctrine\ORM\EntityManager');
         $namespace->addUse('League\Route\RouteGroup');
-        $namespace->addUse('League\Route\Router');
         $namespace->addUse('League\Route\Strategy\JsonStrategy');
-        $namespace->addUse('Zend\Diactoros\ResponseFactory');
+        $namespace->addUse('Laminas\Diactoros\ResponseFactory');
 
         $class = $namespace->addClass($entityName . 'Package');
         $class->addImplement('Barnacle\RegistrationInterface');
