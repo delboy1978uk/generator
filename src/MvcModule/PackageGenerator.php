@@ -25,7 +25,7 @@ class PackageGenerator extends FileGenerator
         $namespace->addUse('Barnacle\Container');
         $namespace->addUse('Barnacle\RegistrationInterface');
         $namespace->addUse('Bone\Mvc\Router\RouterConfigInterface');
-        $namespace->addUse('Bone\View\PlatesEngine');
+        $namespace->addUse('Bone\View\ViewEngine');
         $namespace->addUse($moduleNamespace . '\\Controller\\' . $moduleName . 'ApiController');
         $namespace->addUse($moduleNamespace . '\\Controller\\' . $moduleName . 'Controller');
         $namespace->addUse('League\Route\RouteGroup');
@@ -40,13 +40,13 @@ class PackageGenerator extends FileGenerator
         // add to container
         $method = $class->addMethod('addToContainer');
         $method->addParameter('c')->setTypeHint('Barnacle\Container');
-        $method->setBody('/** @var PlatesEngine $viewEngine */
-$viewEngine = $c->get(PlatesEngine::class);
+        $method->setBody('/** @var ViewEngine $viewEngine */
+$viewEngine = $c->get(ViewEngine::class);
 $viewEngine->addFolder(\'' . $name . '\', __DIR__ . \'/View/' . $moduleName . '/\');
 
 $c[' . $moduleName . 'Controller::class] = $c->factory(function (Container $c) {
-    /** @var PlatesEngine $viewEngine */
-    $viewEngine = $c->get(PlatesEngine::class);
+    /** @var ViewEngine $viewEngine */
+    $viewEngine = $c->get(ViewEngine::class);
 
     return new ' . $moduleName . 'Controller($viewEngine);
 });

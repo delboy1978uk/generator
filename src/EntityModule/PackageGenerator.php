@@ -29,7 +29,7 @@ class PackageGenerator extends FileGenerator
         $namespace->addUse('Bone\Http\Middleware\HalCollection');
         $namespace->addUse('Bone\Http\Middleware\HalEntity');
         $namespace->addUse('Bone\Mvc\Router\RouterConfigInterface');
-        $namespace->addUse('Bone\View\PlatesEngine');
+        $namespace->addUse('Bone\View\ViewEngine');
         $namespace->addUse($moduleNamespace . '\\Controller\\' . $entityName . 'ApiController');
         $namespace->addUse($moduleNamespace . '\\Controller\\' . $entityName . 'Controller');
         $namespace->addUse($moduleNamespace . '\\Service\\' . $entityName . 'Service');
@@ -46,8 +46,8 @@ class PackageGenerator extends FileGenerator
         // add to container
         $method = $class->addMethod('addToContainer');
         $method->addParameter('c')->setTypeHint('Barnacle\Container');
-        $method->setBody('/** @var PlatesEngine $viewEngine */
-$viewEngine = $c->get(PlatesEngine::class);
+        $method->setBody('/** @var ViewEngine $viewEngine */
+$viewEngine = $c->get(ViewEngine::class);
 $viewEngine->addFolder(\'' . $name . '\', __DIR__ . \'/View/' . $entityName . '/\');
 
 $c[' . $entityName . 'Service::class] = $c->factory(function (Container $c) {
@@ -58,8 +58,8 @@ $c[' . $entityName . 'Service::class] = $c->factory(function (Container $c) {
 
 $c[' . $entityName . 'Controller::class] = $c->factory(function (Container $c) {
     $service = $c->get(' . $entityName . 'Service::class);
-    /** @var PlatesEngine $viewEngine */
-    $viewEngine = $c->get(PlatesEngine::class);
+    /** @var ViewEngine $viewEngine */
+    $viewEngine = $c->get(ViewEngine::class);
 
     return new ' . $entityName . 'Controller($viewEngine, $service);
 });
