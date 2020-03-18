@@ -32,7 +32,6 @@ class FormGenerator extends FileGenerator
         $moduleNamespace = $nameSpace . '\\' . $entityName;
         $namespace = $file->addNamespace($moduleNamespace . '\\Form');
 
-        $namespace->addUse($moduleNamespace . '\\Entity\\' . $entityName);
         $namespace->addUse(AbstractForm::class);
         $namespace->addUse(Submit::class);
         $this->addElementUseStatements($namespace, $fields);

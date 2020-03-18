@@ -23,19 +23,22 @@ class PackageGenerator extends FileGenerator
         $namespace = $file->addNamespace($moduleNamespace);
 
         $namespace->addUse('Barnacle\Container');
+        $namespace->addUse('Barnacle\EntityRegistrationInterface');
         $namespace->addUse('Barnacle\RegistrationInterface');
-        $namespace->addUse('Bone\Mvc\Router\RouterConfigInterface');
+        $namespace->addUse('Bone\Controller\Init');
+        $namespace->addUse('Bone\Router\Router');
+        $namespace->addUse('Bone\Router\RouterConfigInterface');
         $namespace->addUse('Bone\View\ViewEngine');
         $namespace->addUse($moduleNamespace . '\\Controller\\' . $moduleName . 'ApiController');
         $namespace->addUse($moduleNamespace . '\\Controller\\' . $moduleName . 'Controller');
         $namespace->addUse('League\Route\RouteGroup');
-        $namespace->addUse('League\Route\Router');
         $namespace->addUse('League\Route\Strategy\JsonStrategy');
-        $namespace->addUse('Zend\Diactoros\ResponseFactory');
+        $namespace->addUse('Laminas\Diactoros\ResponseFactory');
 
         $class = $namespace->addClass($moduleName . 'Package');
         $class->addImplement('Barnacle\RegistrationInterface');
-        $class->addImplement('Bone\Mvc\Router\RouterConfigInterface');
+        $class->addImplement('Bone\Router\RouterConfigInterface');
+        $class->addImplement('Barnacle\EntityRegistrationInterface');
 
         // add to container
         $method = $class->addMethod('addToContainer');
@@ -45,10 +48,7 @@ $viewEngine = $c->get(ViewEngine::class);
 $viewEngine->addFolder(\'' . $name . '\', __DIR__ . \'/View/' . $moduleName . '/\');
 
 $c[' . $moduleName . 'Controller::class] = $c->factory(function (Container $c) {
-    /** @var ViewEngine $viewEngine */
-    $viewEngine = $c->get(ViewEngine::class);
-
-    return new ' . $moduleName . 'Controller($viewEngine);
+    return Init::controller(new ' . $moduleName . 'Controller(), $c);
 });
 
 $c[' . $moduleName . 'ApiController::class] = $c->factory(function (Container $c) {
@@ -56,27 +56,15 @@ $c[' . $moduleName . 'ApiController::class] = $c->factory(function (Container $c
 });');
         $method->addComment('@param Container $c');
 
-        // getEntityPath
-        $method = $class->addMethod('getEntityPath');
-        $method->setBody("return '';");
-        $method->addComment('@return string');
-        $method->setReturnType('string');
-
-        // hasEntityPath
-        $method = $class->addMethod('hasEntityPath');
-        $method->setBody("return false;");
-        $method->addComment('@return bool');
-        $method->setReturnType('bool');
-
         // addRoutes
         $method = $class->addMethod('addRoutes');
         $method->addComment('@param Container $c');
         $method->addComment('@param Router $router');
         $method->addComment('@return Router');
         $method->addParameter('c')->setTypeHint('Barnacle\Container');
-        $method->addParameter('router')->setTypeHint('League\Route\Router');
-        $method->addParameter('router')->setTypeHint('League\Route\Router');
-        $method->setReturnType('League\Route\Router');
+        $method->addParameter('router')->setTypeHint('Bone\Router\Router');
+        $method->addParameter('router')->setTypeHint('Bone\Router\Router');
+        $method->setReturnType('Bone\Router\Router');
         $method->setBody('$router->map(\'GET\', \'/' . $name . '\', [' . $moduleName . 'Controller::class, \'indexAction\']);
 
 $factory = new ResponseFactory();

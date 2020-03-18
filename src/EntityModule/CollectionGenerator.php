@@ -39,10 +39,13 @@ class CollectionGenerator extends FileGenerator
         $method = $class->addMethod('update');
         $method->addParameter($name)->setTypeHint($nameSpace . '\\' . $entityName . '\\Entity\\' . $entityName);
         $method->setBody('$key = $this->findKey($' . $name . ');
+        
 if($key) {
     $this->offsetSet($key,$' . $name . ');
+    
     return $this;
 }
+
 throw new LogicException(\'' . $entityName . ' was not in the collection.\');');
         $method->setReturnType($fqcn);
         $method->addComment('@param ' . $entityName . ' $' . $name);
@@ -68,12 +71,16 @@ throw new LogicException(\'' . $entityName . ' was not in the collection.\');');
         $method->addParameter($name)->setTypeHint($nameSpace . '\\' . $entityName . '\\Entity\\' . $entityName);
         $method->setBody('$it = $this->getIterator();
 $it->rewind();
+
 while($it->valid()) {
+
     if($it->current()->getId() == $' . $name . '->getId()) {
         return $it->key();
     }
+    
     $it->next();
 }
+
 return null;');
         $method->setReturnType('int');
         $method->setReturnNullable();
@@ -85,12 +92,16 @@ return null;');
         $method->addParameter('id')->setTypeHint('int');
         $method->setBody('$it = $this->getIterator();
 $it->rewind();
+
 while($it->valid()) {
+
     if($it->current()->getId() == $id) {
         return $it->current();
     }
+    
     $it->next();
 }
+
 return null;');
         $method->setReturnType($moduleNamespace . '\\Entity\\' . $entityName);
         $method->setReturnNullable();
@@ -102,6 +113,7 @@ return null;');
         $method->setBody('$collection = [];
 $it = $this->getIterator();
 $it->rewind();
+
 while($it->valid()) {
     /** @var ' . $entityName . ' $row */
     $row = $it->current();

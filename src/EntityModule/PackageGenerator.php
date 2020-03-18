@@ -40,7 +40,7 @@ class PackageGenerator extends FileGenerator
 
         $class = $namespace->addClass($entityName . 'Package');
         $class->addImplement('Barnacle\RegistrationInterface');
-        $class->addImplement('Bone\Mvc\Router\RouterConfigInterface');
+        $class->addImplement('Bone\Router\RouterConfigInterface');
 
         // add to container
         $method = $class->addMethod('addToContainer');
@@ -88,9 +88,9 @@ $c[' . $entityName . 'ApiController::class] = $c->factory(function (Container $c
         $method->addComment('@param Router $router');
         $method->addComment('@return Router');
         $method->addParameter('c')->setTypeHint('Barnacle\Container');
-        $method->addParameter('router')->setTypeHint('League\Route\Router');
-        $method->addParameter('router')->setTypeHint('League\Route\Router');
-        $method->setReturnType('League\Route\Router');
+        $method->addParameter('router')->setTypeHint('Bone\Router\Router');
+        $method->addParameter('router')->setTypeHint('Bone\Router\Router');
+        $method->setReturnType('Bone\Router\Router');
         $method->setBody('$router->map(\'GET\', \'/' . $name . '\', [' . $entityName . 'Controller::class, \'indexAction\']);
 $router->map(\'GET\', \'/' . $name . '/{id:number}\', [' . $entityName . 'Controller::class, \'viewAction\']);
 $router->map(\'GET\', \'/' . $name . '/create\', [' . $entityName . 'Controller::class, \'createAction\']);

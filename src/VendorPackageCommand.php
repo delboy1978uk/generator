@@ -130,7 +130,9 @@ SOFTWARE.
             // gitignore
             $output->writeln('Adding gitignore...');
             $gitignore = ".idea/
+composer.lock
 composer.phar
+tests/_output
 vendor
 ";
             file_put_contents($newPath . '/.gitignore', $gitignore);
@@ -157,10 +159,9 @@ return [
             // composer
             $output->writeln('Adding composer json...');
 
-
             $config = [
                 'name' => $vendor . '/' . $package,
-                'description' => $toReplace . ' package for Bone MVC Framework',
+                'description' => $toReplace . ' package for Bone Framework',
                 'license' => 'MIT',
                 'authors' => [
                     [
@@ -174,7 +175,7 @@ return [
                 ],
                 'autoload' => [
                     'psr-4' => [
-                        $namespace . '\\\\' => 'src/'
+                        $namespace . '\\' => 'src/'
                     ],
                 ],
             ];

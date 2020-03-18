@@ -24,7 +24,6 @@ class RepositoryGenerator extends FileGenerator
 
         $namespace->addUse('Doctrine\ORM\EntityNotFoundException');
         $namespace->addUse('Doctrine\ORM\EntityRepository');
-        $namespace->addUse($moduleNamespace . '\\Collection\\' . $entityName . 'Collection');
         $namespace->addUse($moduleNamespace . '\\Entity\\' . $entityName);
 
         $class = new ClassType($entityName . 'Repository');
@@ -40,6 +39,7 @@ class RepositoryGenerator extends FileGenerator
         $method->setReturnType($moduleNamespace . '\\Entity\\' . $entityName);
         $method->setBody('        /** @var ' . $entityName . ' $' . $name . ' */
 $' . $name . ' =  parent::find($id, $lockMode, $lockVersion);
+
 if (!$' . $name . ') {
     throw new EntityNotFoundException(\'' . $entityName . ' not found.\', 404);
 }
@@ -58,6 +58,7 @@ return $' . $name . ';');
         $method->setBody('if(!$' . $name . '->getID()) {
     $this->_em->persist($' . $name . ');
 }
+
 $this->_em->flush($' . $name . ');
 
 return $' . $name . ';');

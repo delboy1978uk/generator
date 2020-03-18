@@ -31,7 +31,7 @@ class ApiControllerGenerator extends FileGenerator
         $namespace->addUse('League\Route\Http\Exception\NotFoundException');
         $namespace->addUse(ResponseInterface::class);
         $namespace->addUse(ServerRequestInterface::class);
-        $namespace->addUse('Zend\Diactoros\Response\JsonResponse');
+        $namespace->addUse('Laminas\Diactoros\Response\JsonResponse');
 
         $class = $namespace->addClass($entityName . 'ApiController');
 
@@ -52,6 +52,7 @@ class ApiControllerGenerator extends FileGenerator
         $method->addComment('@param array $args');
         $method->addComment('@return ResponseInterface');
         $method->addComment('@throws NotFoundException');
+        $method->addComment('@throws \Doctrine\ORM\NonUniqueResultException');
         $method->addComment('@throws \Doctrine\ORM\NonUniqueResultException');
         $method->addParameter('request')->setTypeHint(ServerRequestInterface::class);
         $method->addParameter('args')->setTypeHint('array');
@@ -79,8 +80,7 @@ return new JsonResponse($payload);');
         $method->addComment('@param ServerRequestInterface $request');
         $method->addComment('@param array $args');
         $method->addComment('@return ResponseInterface');
-        $method->addComment('@throws \Doctrine\ORM\ORMException');
-        $method->addComment('@throws \Doctrine\ORM\OptimisticLockException');
+        $method->addComment('@throws \Exception');
         $method->addParameter('request')->setTypeHint(ServerRequestInterface::class);
         $method->addParameter('args')->setTypeHint('array');
         $method->setReturnType(ResponseInterface::class);
@@ -106,7 +106,7 @@ return new JsonResponse([
         $method->addComment('@param ServerRequestInterface $request');
         $method->addComment('@param array $args');
         $method->addComment('@return ResponseInterface');
-        $method->addComment('@throws \Doctrine\ORM\EntityNotFoundException');
+        $method->addComment('@throws \Exception');
         $method->addParameter('request')->setTypeHint(ServerRequestInterface::class);
         $method->addParameter('args')->setTypeHint('array');
         $method->setReturnType(ResponseInterface::class);
@@ -120,9 +120,7 @@ return new JsonResponse($' . $name . '->toArray());');
         $method->addComment('@param ServerRequestInterface $request');
         $method->addComment('@param array $args');
         $method->addComment('@return ResponseInterface');
-        $method->addComment('@throws \Doctrine\ORM\EntityNotFoundException');
-        $method->addComment('@throws \Doctrine\ORM\ORMException');
-        $method->addComment('@throws \Doctrine\ORM\OptimisticLockException');
+        $method->addComment('@throws \Exception');
         $method->addParameter('request')->setTypeHint(ServerRequestInterface::class);
         $method->addParameter('args')->setTypeHint('array');
         $method->setReturnType(ResponseInterface::class);

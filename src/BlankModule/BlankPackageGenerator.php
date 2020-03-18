@@ -35,19 +35,6 @@ class BlankPackageGenerator extends FileGenerator
         $method->setBody('');
         $method->addComment('@param Container $c');
 
-        // getEntityPath
-        $method = $class->addMethod('getEntityPath');
-        $method->setBody("return '';");
-        $method->addComment('@return string');
-        $method->setReturnType('string');
-
-        // hasEntityPath
-        $method = $class->addMethod('hasEntityPath');
-        $method->setBody("return false;");
-        $method->addComment('@return bool');
-        $method->setReturnType('bool');
-
-
         $printer = new PsrPrinter();
         $code = $printer->printFile($file);
         file_put_contents('build/' . $this->buildId . '/' . $moduleName . '/' . $moduleName . 'Package.php', $code);

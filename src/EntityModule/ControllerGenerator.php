@@ -233,7 +233,7 @@ return new HtmlResponse($body);');
         $method->addParameter('class')->setTypeHint('string');
         $method->setBody('$helper = new AlertBox();
 
-        return $helper->alertBox([
+return $helper->alertBox([
     \'message\' => $message,
     \'class\' => $class,
 ]);');

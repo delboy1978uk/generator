@@ -27,7 +27,7 @@ class ApiControllerGenerator extends FileGenerator
 
         $namespace->addUse(ResponseInterface::class);
         $namespace->addUse(ServerRequestInterface::class);
-        $namespace->addUse('Zend\Diactoros\Response\JsonResponse');
+        $namespace->addUse('Laminas\Diactoros\Response\JsonResponse');
 
         $class = $namespace->addClass($entityName . 'ApiController');
 

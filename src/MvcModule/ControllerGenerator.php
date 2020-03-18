@@ -24,22 +24,14 @@ class ControllerGenerator extends FileGenerator
         $moduleNamespace = $nameSpace . '\\' . $moduleName;
         $namespace = $file->addNamespace($moduleNamespace . '\\Controller');
 
-        $namespace->addUse('Bone\View\ViewEngine');
+        $namespace->addUse('Bone\Controller\Controller');
         $namespace->addUse(ResponseInterface::class);
         $namespace->addUse(ServerRequestInterface::class);
-        $namespace->addUse('Zend\Diactoros\Response\HtmlResponse');
+        $namespace->addUse('Laminas\Diactoros\Response\HtmlResponse');
 
         $class = $namespace->addClass($moduleName . 'Controller');
+        $class->addExtend('Bone\Controller\Controller');
 
-        $property = $class->addProperty('view');
-        $property->addComment('@var ViewEngine $view');
-        $property->setVisibility('private');
-
-        // constructor
-        $method = $class->addMethod('__construct');
-        $method->addParameter('view')->setTypeHint('Bone\View\ViewEngine');
-        $method->setBody('$this->view = $view;');
-        
         // indexAction
         $lcEntity = strtolower($moduleName);
         $method = $class->addMethod('indexAction');
