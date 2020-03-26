@@ -1,6 +1,6 @@
 <?php
 
-namespace Bone\BoneDoctrine;
+namespace Del\Generator;
 
 use Barnacle\Container;
 use Barnacle\RegistrationInterface;
