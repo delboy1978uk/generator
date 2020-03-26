@@ -1,6 +1,6 @@
 {
     "name": "delboy1978uk/generator",
-    "description": "A basic crud entity, form and service generator",
+    "description": "Generate blank, controller, and db entity package templates for Bone Framework",
     "license": "MIT",
     "authors": [
         {
@@ -11,10 +11,17 @@
     "require": {
         "php": ">7.0",
         "ext-json": "*",
+        "delboy1978uk/barnacle": "^2.3",
         "delboy1978uk/common": "^4.0",
         "nette/php-generator": "^3.2",
         "delboy1978uk/form": "^2.1",
-        "zendframework/zend-diactoros": "^2.1"
+        "laminas/laminas-diactoros": "^2.1",
+        "delboy1978uk/bone-console": "^1.1",
+        "laminas/laminas-i18n": "^2.10"
+    }
+    ,
+    "require-dev": {
+        "roave/security-advisories": "dev-master"
     },
     "autoload": {
         "psr-4": {

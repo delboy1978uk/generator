@@ -11,11 +11,11 @@ use Del\Form\Field\Submit;
 use Del\Form\Field\Text;
 use Del\Form\Field\TextArea;
 use Del\Generator\FileGenerator;
+use Laminas\I18n\Validator\IsFloat;
 use Nette\PhpGenerator\ClassType;
 use Nette\PhpGenerator\PhpFile;
 use Nette\PhpGenerator\PhpNamespace;
 use Nette\PhpGenerator\PsrPrinter;
-use Zend\I18n\Validator\IsFloat;
 
 class FormGenerator extends FileGenerator
 {
