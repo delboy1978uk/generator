@@ -185,5 +185,7 @@ return [
 
             $output->writeln('Packaging complete');
         }
+
+        return 0;
     }
 }

@@ -42,6 +42,8 @@ class ClearBuildsCommand extends Command
             $this->deleteDir($folder);
             $output->writeln('Removing ' . $folder);
         }
+
+        return 0;
     }
 
     /**

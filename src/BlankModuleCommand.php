@@ -54,5 +54,7 @@ class BlankModuleCommand extends Command
         if ($buildId = $generator->createBlankModule($nameSpace, $entityName)) {
             $output->writeln('Successfully generated in build/' . $buildId . '.');
         }
+
+        return 0;
     }
 }

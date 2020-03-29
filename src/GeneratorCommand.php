@@ -184,6 +184,8 @@ class GeneratorCommand extends Command
         if ($buildId = $generator->createEntityModule($nameSpace, $entityName, $fields)) {
             $output->writeln('Successfully generated in build/' . $buildId . '.');
         }
+
+        return 0;
     }
 
     /**
