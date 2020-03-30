@@ -40,7 +40,7 @@ class GeneratorCommand extends Command
     /**
      * @param InputInterface $input
      * @param OutputInterface $output
-     * @return int|void|null
+     * @return int|void
      * @throws \Exception
      */
     protected function execute(InputInterface $input, OutputInterface $output)
@@ -191,28 +191,33 @@ class GeneratorCommand extends Command
     /**
      * @param InputInterface $input
      * @param OutputInterface $output
-     * @throws \Exceptio
+     * @return int
+     * @throws \Exception
      */
-    private function generateFromConfigFile(InputInterface $input, OutputInterface $output): void
+    private function generateFromConfigFile(InputInterface $input, OutputInterface $output): int
     {
         $filename = $input->getOption('load') ?: 'generator';
         $filename = str_replace('.json', '', $filename);
         $filename = $filename . '.json';
         $output->writeln('Generating from config file ' . $filename);
+
         if (!$json = file_get_contents($filename)) {
             $output->writeln('Failed to load ' . $filename);
-            return;
+
+            return 1;
         }
+
         $output->writeln('');
         $config = json_decode($json, true);
         $namespace = $config['namespace'];
         $entity = $config['entity'];
         $fields = $config['fields'];
-
         $generator = new GeneratorService();
 
         if ($buildId = $generator->createEntityModule($namespace, $entity, $fields)) {
             $output->writeln('Successfully generated in build/' . $buildId . '.');
         }
+
+        return 0;
     }
 }

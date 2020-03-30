@@ -185,7 +185,8 @@ class FormGenerator extends FileGenerator
      */
     private function addValidator(string $fieldName, $validatorClass): string
     {
-        $validatorVarName = end(explode('\'', $validatorClass));
+        $explosion = explode('\'', $validatorClass);
+        $validatorVarName = end($explosion);
         $body =  '$' . ucfirst($validatorVarName) . ' = new ' . $validatorVarName . ";\n";
         $body .= '$' . $fieldName . '->addValidator()' . "\n";
 
