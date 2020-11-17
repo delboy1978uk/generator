@@ -23,12 +23,11 @@ class PackageGenerator extends FileGenerator
         $namespace = $file->addNamespace($moduleNamespace);
 
         $namespace->addUse('Barnacle\Container');
-        $namespace->addUse('Barnacle\EntityRegistrationInterface');
         $namespace->addUse('Barnacle\RegistrationInterface');
         $namespace->addUse('Bone\Controller\Init');
         $namespace->addUse('Bone\Router\Router');
         $namespace->addUse('Bone\Router\RouterConfigInterface');
-        $namespace->addUse('Bone\View\ViewEngine');
+        $namespace->addUse('Bone\View\ViewRegistrationInterface');
         $namespace->addUse($moduleNamespace . '\\Controller\\' . $moduleName . 'ApiController');
         $namespace->addUse($moduleNamespace . '\\Controller\\' . $moduleName . 'Controller');
         $namespace->addUse('League\Route\RouteGroup');
@@ -38,16 +37,12 @@ class PackageGenerator extends FileGenerator
         $class = $namespace->addClass($moduleName . 'Package');
         $class->addImplement('Barnacle\RegistrationInterface');
         $class->addImplement('Bone\Router\RouterConfigInterface');
-        $class->addImplement('Barnacle\EntityRegistrationInterface');
+        $class->addImplement('Bone\View\ViewRegistrationInterface');
 
         // add to container
         $method = $class->addMethod('addToContainer');
         $method->addParameter('c')->setTypeHint('Barnacle\Container');
-        $method->setBody('/** @var ViewEngine $viewEngine */
-$viewEngine = $c->get(ViewEngine::class);
-$viewEngine->addFolder(\'' . $name . '\', __DIR__ . \'/View/' . $moduleName . '/\');
-
-$c[' . $moduleName . 'Controller::class] = $c->factory(function (Container $c) {
+        $method->setBody('$c[' . $moduleName . 'Controller::class] = $c->factory(function (Container $c) {
     return Init::controller(new ' . $moduleName . 'Controller(), $c);
 });
 
@@ -55,6 +50,14 @@ $c[' . $moduleName . 'ApiController::class] = $c->factory(function (Container $c
     return new ' . $moduleName . 'ApiController();
 });');
         $method->addComment('@param Container $c');
+
+        // addViews
+        $method = $class->addMethod('addViews');
+        $method->addComment('@return array');
+        $method->setReturnType('array');
+        $method->setBody("return [
+    '$name' => __DIR__ . '/View/$name/',
+];");
 
         // addRoutes
         $method = $class->addMethod('addRoutes');

@@ -150,7 +150,7 @@ class GeneratorService
             'build/' . $unique . '/' . $moduleName,
             'build/' . $unique . '/' . $moduleName . '/Controller',
             'build/' . $unique . '/' . $moduleName . '/View',
-            'build/' . $unique . '/' . $moduleName . '/View/' . $moduleName,
+            'build/' . $unique . '/' . $moduleName . '/View/' . \strtolower($moduleName),
         ];
 
         foreach ($folders as $folder) {

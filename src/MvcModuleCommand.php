@@ -42,7 +42,7 @@ class MvcModuleCommand extends Command
         $output->writeln('Empty Module Generator');
         $output->writeln('');
 
-        $question = new Question('Enter the base namespace: ', 'BoneMvc\\Module');
+        $question = new Question('Enter the base namespace: ', 'Bone\\Module');
         $nameSpace = $this->helper->ask($input, $output, $question);
 
         $question = new Question('Enter the name of the module: ', false);
@@ -53,6 +53,10 @@ class MvcModuleCommand extends Command
 
         if ($buildId = $generator->createMvcModule($nameSpace, $entityName)) {
             $output->writeln('Successfully generated in build/' . $buildId . '.');
+            $output->writeln('Move the build/' . $buildId . '/' . $entityName . ' folder to your src/ folder');
+            $output->writeln('Add `"' . $nameSpace . '\\\\' . $entityName . '": "src/' . $entityName . '/",` to your composer.json autoload section ');
+            $output->writeln('Then run `composer dumpautoload` to register the namespace.');
+            $output->writeln(' ');
         }
 
         return 0;
