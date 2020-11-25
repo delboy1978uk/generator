@@ -2,6 +2,7 @@
 
 namespace Del\Generator\EntityModule;
 
+use Bone\User\Http\Middleware\SessionAuth;
 use Del\Generator\FileGenerator;
 use Nette\PhpGenerator\ClassType;
 use Nette\PhpGenerator\PhpFile;
@@ -24,12 +25,14 @@ class PackageGenerator extends FileGenerator
         $namespace = $file->addNamespace($moduleNamespace);
 
         $namespace->addUse('Barnacle\Container');
+        $namespace->addUse('Barnacle\EntityRegistrationInterface');
         $namespace->addUse('Barnacle\RegistrationInterface');
         $namespace->addUse('Bone\Http\Middleware\HalCollection');
         $namespace->addUse('Bone\Http\Middleware\HalEntity');
         $namespace->addUse('Bone\Router\Router');
         $namespace->addUse('Bone\Router\RouterConfigInterface');
-        $namespace->addUse('Bone\View\ViewEngine');
+        $namespace->addUse('Bone\User\Http\Middleware\SessionAuth');
+        $namespace->addUse('Bone\View\ViewRegistrationInterface');
         $namespace->addUse($moduleNamespace . '\\Controller\\' . $entityName . 'ApiController');
         $namespace->addUse($moduleNamespace . '\\Controller\\' . $entityName . 'Controller');
         $namespace->addUse($moduleNamespace . '\\Service\\' . $entityName . 'Service');
@@ -41,15 +44,13 @@ class PackageGenerator extends FileGenerator
         $class = $namespace->addClass($entityName . 'Package');
         $class->addImplement('Barnacle\RegistrationInterface');
         $class->addImplement('Bone\Router\RouterConfigInterface');
+        $class->addImplement('Barnacle\EntityRegistrationInterface');
+        $class->addImplement('Bone\View\ViewRegistrationInterface');
 
         // add to container
         $method = $class->addMethod('addToContainer');
         $method->addParameter('c')->setTypeHint('Barnacle\Container');
-        $method->setBody('/** @var ViewEngine $viewEngine */
-$viewEngine = $c->get(ViewEngine::class);
-$viewEngine->addFolder(\'' . $name . '\', __DIR__ . \'/View/' . $entityName . '/\');
-
-$c[' . $entityName . 'Service::class] = $c->factory(function (Container $c) {
+        $method->setBody('$c[' . $entityName . 'Service::class] = $c->factory(function (Container $c) {
     $em =  $c->get(EntityManager::class);
     
     return new ' . $entityName . 'Service($em);
@@ -70,17 +71,24 @@ $c[' . $entityName . 'ApiController::class] = $c->factory(function (Container $c
 });');
         $method->addComment('@param Container $c');
 
+
+
+        // getViews
+        $method = $class->addMethod('addViews');
+        $method->setBody("return ['" . strtolower($entityName) . "' => __DIR__ . '/View'];");
+        $method->addComment('@return array');
+        $method->setReturnType('array');
+
+        $method = $class->addMethod('addViewExtensions');
+        $method->setBody('return [];');
+        $method->addComment('@return array');
+        $method->setReturnType('array');
+
         // getEntityPath
         $method = $class->addMethod('getEntityPath');
         $method->setBody("return __DIR__ . '/Entity';");
         $method->addComment('@return string');
         $method->setReturnType('string');
-
-        // hasEntityPath
-        $method = $class->addMethod('hasEntityPath');
-        $method->setBody("return true;");
-        $method->addComment('@return bool');
-        $method->setReturnType('bool');
 
         // addRoutes
         $method = $class->addMethod('addRoutes');
@@ -91,26 +99,29 @@ $c[' . $entityName . 'ApiController::class] = $c->factory(function (Container $c
         $method->addParameter('router')->setTypeHint('Bone\Router\Router');
         $method->addParameter('router')->setTypeHint('Bone\Router\Router');
         $method->setReturnType('Bone\Router\Router');
-        $method->setBody('$router->map(\'GET\', \'/' . $name . '\', [' . $entityName . 'Controller::class, \'indexAction\']);
-$router->map(\'GET\', \'/' . $name . '/{id:number}\', [' . $entityName . 'Controller::class, \'viewAction\']);
-$router->map(\'GET\', \'/' . $name . '/create\', [' . $entityName . 'Controller::class, \'createAction\']);
-$router->map(\'GET\', \'/' . $name . '/edit/{id:number}\', [' . $entityName . 'Controller::class, \'editAction\']);
-$router->map(\'GET\', \'/' . $name . '/delete/{id:number}\', [' . $entityName . 'Controller::class, \'deleteAction\']);
+        $method->setBody('$auth = $c->get(SessionAuth::class);
+$router->group(\'/dog\', function (RouteGroup $route) {
+    $route->map(\'GET\', \'/\', [' . $entityName . 'Controller::class, \'index\']);
+    $route->map(\'GET\', \'/{id:number}\', [' . $entityName . 'Controller::class, \'view\']);
+    $route->map(\'GET\', \'/create\', [' . $entityName . 'Controller::class, \'create\']);
+    $route->map(\'GET\', \'/edit/{id:number}\', [' . $entityName . 'Controller::class, \'edit\']);
+    $route->map(\'GET\', \'/delete/{id:number}\', [' . $entityName . 'Controller::class, \'delete\']);
 
-$router->map(\'POST\', \'/' . $name . '/create\', [' . $entityName . 'Controller::class, \'createAction\']);
-$router->map(\'POST\', \'/' . $name . '/edit/{id:number}\', [' . $entityName . 'Controller::class, \'editAction\']);
-$router->map(\'POST\', \'/' . $name . '/delete/{id:number}\', [' . $entityName . 'Controller::class, \'deleteAction\']);
+    $route->map(\'POST\', \'/' . $name . '/create\', [' . $entityName . 'Controller::class, \'create\']);
+    $route->map(\'POST\', \'/' . $name . '/edit/{id:number}\', [' . $entityName . 'Controller::class, \'edit\']);
+    $route->map(\'POST\', \'/' . $name . '/delete/{id:number}\', [' . $entityName . 'Controller::class, \'delete\']);
+})->middlewares([$auth]);
 
 $factory = new ResponseFactory();
 $strategy = new JsonStrategy($factory);
 $strategy->setContainer($c);
 
 $router->group(\'/api\', function (RouteGroup $route) {
-    $route->map(\'GET\', \'/' . $name . '\', [' . $entityName . 'ApiController::class, \'indexAction\'])->prependMiddleware(new HalCollection(5));
-    $route->map(\'GET\', \'/' . $name . '/{id:number}\', [' . $entityName . 'ApiController::class, \'viewAction\'])->prependMiddleware(new HalEntity());
-    $route->map(\'POST\', \'/' . $name . '\', [' . $entityName . 'ApiController::class, \'createAction\']);
-    $route->map(\'PUT\', \'/' . $name . '/{id:number}\', [' . $entityName . 'ApiController::class, \'updateAction\']);
-    $route->map(\'DELETE\', \'/' . $name . '/{id:number}\', [' . $entityName . 'ApiController::class, \'deleteAction\']);
+    $route->map(\'GET\', \'/' . $name . '\', [' . $entityName . 'ApiController::class, \'index\'])->prependMiddleware(new HalCollection(5));
+    $route->map(\'GET\', \'/' . $name . '/{id:number}\', [' . $entityName . 'ApiController::class, \'view\'])->prependMiddleware(new HalEntity());
+    $route->map(\'POST\', \'/' . $name . '\', [' . $entityName . 'ApiController::class, \'create\']);
+    $route->map(\'PUT\', \'/' . $name . '/{id:number}\', [' . $entityName . 'ApiController::class, \'update\']);
+    $route->map(\'DELETE\', \'/' . $name . '/{id:number}\', [' . $entityName . 'ApiController::class, \'delete\']);
 })
 ->setStrategy($strategy);
 

@@ -47,15 +47,13 @@ class ApiControllerGenerator extends FileGenerator
 
 
         // index action
-        $method = $class->addMethod('indexAction');
+        $method = $class->addMethod('index');
         $method->addComment('@param ServerRequestInterface $request');
-        $method->addComment('@param array $args');
         $method->addComment('@return ResponseInterface');
         $method->addComment('@throws NotFoundException');
-        $method->addComment('@throws \Doctrine\ORM\NonUniqueResultException');
+        $method->addComment('@throws \Doctrine\ORM\NoResultException');
         $method->addComment('@throws \Doctrine\ORM\NonUniqueResultException');
         $method->addParameter('request')->setTypeHint(ServerRequestInterface::class);
-        $method->addParameter('args')->setTypeHint('array');
         $method->setReturnType(ResponseInterface::class);
         $method->setBody('$params = $request->getQueryParams();
 $limit = $params[\'limit\'];
@@ -76,13 +74,11 @@ return new JsonResponse($payload);');
 
 
         // create action
-        $method = $class->addMethod('createAction');
+        $method = $class->addMethod('create');
         $method->addComment('@param ServerRequestInterface $request');
-        $method->addComment('@param array $args');
         $method->addComment('@return ResponseInterface');
         $method->addComment('@throws \Exception');
         $method->addParameter('request')->setTypeHint(ServerRequestInterface::class);
-        $method->addParameter('args')->setTypeHint('array');
         $method->setReturnType(ResponseInterface::class);
         $method->setBody('$post = json_decode($request->getBody()->getContents(), true) ?: $request->getParsedBody();
 $form = new ' . $entityName . 'Form(\'create\');
@@ -102,30 +98,26 @@ return new JsonResponse([
 
 
         // view action
-        $method = $class->addMethod('viewAction');
+        $method = $class->addMethod('view');
         $method->addComment('@param ServerRequestInterface $request');
-        $method->addComment('@param array $args');
         $method->addComment('@return ResponseInterface');
-        $method->addComment('@throws \Exception');
+        $method->addComment('@throws \Doctrine\ORM\ORMException');
         $method->addParameter('request')->setTypeHint(ServerRequestInterface::class);
-        $method->addParameter('args')->setTypeHint('array');
         $method->setReturnType(ResponseInterface::class);
-        $method->setBody('$' . $name . ' = $this->service->getRepository()->find($args[\'id\']);
+        $method->setBody('$' . $name . ' = $this->service->getRepository()->find($request->getAttribute(\'id\'));
 
 return new JsonResponse($' . $name . '->toArray());');
 
 
         // update action
-        $method = $class->addMethod('updateAction');
+        $method = $class->addMethod('update');
         $method->addComment('@param ServerRequestInterface $request');
-        $method->addComment('@param array $args');
         $method->addComment('@return ResponseInterface');
         $method->addComment('@throws \Exception');
         $method->addParameter('request')->setTypeHint(ServerRequestInterface::class);
-        $method->addParameter('args')->setTypeHint('array');
         $method->setReturnType(ResponseInterface::class);
         $method->setBody('$db = $this->service->getRepository();
-$' . $name . ' = $db->find($args[\'id\']);
+$' . $name . ' = $db->find($request->getAttribute(\'id\'));
 
 $post = json_decode($request->getBody()->getContents(), true) ?: $request->getParsedBody();
 $form = new ' . $entityName . 'Form(\'update\');
@@ -145,18 +137,14 @@ return new JsonResponse([
 
 
         // delete action
-        $method = $class->addMethod('deleteAction');
+        $method = $class->addMethod('delete');
         $method->addComment('@param ServerRequestInterface $request');
-        $method->addComment('@param array $args');
         $method->addComment('@return ResponseInterface');
-        $method->addComment('@throws \Doctrine\ORM\EntityNotFoundException');
-        $method->addComment('@throws \Doctrine\ORM\ORMException');
-        $method->addComment('@throws \Doctrine\ORM\OptimisticLockException');
+        $method->addComment('@throws \Exception');
         $method->addParameter('request')->setTypeHint(ServerRequestInterface::class);
-        $method->addParameter('args')->setTypeHint('array');
         $method->setReturnType(ResponseInterface::class);
         $method->setBody('$db = $this->service->getRepository();
-$' . $name . ' = $db->find($args[\'id\']);
+$' . $name . ' = $db->find($request->getAttribute(\'id\'));
 $this->service->delete' . $entityName . '($' . $name . ');
 
 return new JsonResponse([\'deleted\' => true]);');

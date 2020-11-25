@@ -25,6 +25,7 @@ class ControllerGenerator extends FileGenerator
         $namespace = $file->addNamespace($moduleNamespace . '\\Controller');
 
         $namespace->addUse($moduleNamespace . '\\Entity\\' . $entityName);
+        $namespace->addUse('Bone\Controller\Controller');
         $namespace->addUse('Bone\View\ViewEngine');
         $namespace->addUse('Bone\View\Helper\AlertBox');
         $namespace->addUse('Bone\View\Helper\Paginator');
@@ -40,6 +41,7 @@ class ControllerGenerator extends FileGenerator
         $namespace->addUse('Laminas\Diactoros\Response\HtmlResponse');
 
         $class = $namespace->addClass($entityName . 'Controller');
+        $class->addExtend('')
 
         $property = $class->addProperty('numPerPage');
         $property->addComment('@var int $numPerPage');
@@ -68,20 +70,18 @@ $this->view = $view;');
         $method->addComment('@param ' . $entityName . 'Service' . ' $service');
 
 
-        // indexAction
+        // index
         $lcEntity = strtolower($entityName);
-        $method = $class->addMethod('indexAction');
+        $method = $class->addMethod('index');
         $method->addParameter('request')->setTypeHint(ServerRequestInterface::class);
-        $method->addParameter('args')->setTypeHint('array');
         $method->setBody('
 $db = $this->service->getRepository();
 $total = $db->getTotal' . $entityName . 'Count();
-
 $this->paginator->setUrl(\'' . $lcEntity . '?page=:page\');
-$page = (int) $request->getQueryParams()[\'page\'] ?: 1;
+$params = $request->getQueryParams();
+$page = array_key_exists(\'page\', $params) ?(int) $params[\'page\'] : 1;
 $this->paginator->setCurrentPage($page);
 $this->paginator->setPageCountByTotalRecords($total, $this->numPerPage);
-
 $' . $lcEntity . 's = new ' . $entityName . 'Collection($db->findBy([], null, $this->numPerPage, ($page *  $this->numPerPage) - $this->numPerPage));
 
 $body = $this->view->render(\'' . $lcEntity . '::index\', [
@@ -92,19 +92,17 @@ $body = $this->view->render(\'' . $lcEntity . '::index\', [
 return new HtmlResponse($body);
 ');
         $method->addComment('@param ServerRequestInterface $request');
-        $method->addComment('@param array $args');
         $method->addComment('@return ResponseInterface $response');
         $method->addComment('@throws \Exception');
         $method->setReturnType(ResponseInterface::class);
 
 
-        // viewAction
-        $method = $class->addMethod('viewAction');
+        // view
+        $method = $class->addMethod('view');
         $method->addParameter('request')->setTypeHint(ServerRequestInterface::class);
-        $method->addParameter('args')->setTypeHint('array');
         $method->setBody('
 $db = $this->service->getRepository();
-$id = $args[\'id\'];
+$id = $request->getAttribute(\'id\');
 $' . $lcEntity . ' = $db->find($id);
 $body = $this->view->render(\'' . $lcEntity . '::view\', [
     \'' . $lcEntity . '\' => $' . $lcEntity . ',
@@ -118,12 +116,12 @@ return new HtmlResponse($body);
         $method->setReturnType(ResponseInterface::class);
 
 
-        // createAction
-        $method = $class->addMethod('createAction');
+        // create
+        $method = $class->addMethod('create');
         $method->addParameter('request')->setTypeHint(ServerRequestInterface::class);
-        $method->addParameter('args')->setTypeHint('array');
         $method->setBody('$msg = \'\';
 $form = new ' . $entityName . 'Form(\'create' . $entityName . '\');
+
 if ($request->getMethod() === \'POST\') {
     $post = $request->getParsedBody();
     $form->populate($post);
@@ -151,13 +149,12 @@ return new HtmlResponse($body);');
         $method->setReturnType(ResponseInterface::class);
 
 
-        // editAction
-        $method = $class->addMethod('editAction');
+        // edit
+        $method = $class->addMethod('edit');
         $method->addParameter('request')->setTypeHint(ServerRequestInterface::class);
-        $method->addParameter('args')->setTypeHint('array');
         $method->setBody('$msg = \'\';
 $form = new ' . $entityName . 'Form(\'edit' . $entityName . '\');
-$id = $args[\'id\'];
+$id = $request->getAttribute(\'id\');
 $db = $this->service->getRepository();
 /** @var ' . $entityName . ' $' . $lcEntity . ' */
 $' . $lcEntity . ' = $db->find($id);
@@ -189,16 +186,15 @@ return new HtmlResponse($body);');
         $method->setReturnType(ResponseInterface::class);
 
 
-        // deleteAction
-        $method = $class->addMethod('deleteAction');
+        // delete
+        $method = $class->addMethod('delete');
         $method->addParameter('request')->setTypeHint(ServerRequestInterface::class);
-        $method->addParameter('args')->setTypeHint('array');
-        $method->setBody('$id = $args[\'id\'];
+        $method->setBody('$id = $request->getAttribute(\'id\');
 $db = $this->service->getRepository();
 $form = new Form(\'delete' . $entityName . '\');
 $submit = new Submit(\'submit\');
 $submit->setValue(\'Delete\');
-$submit->setClass(\'btn btn-danger\');
+$submit->setClass(\'btn btn-lg btn-danger\');
 $form->addField($submit);
 /** @var ' . $entityName . ' $' . $lcEntity . ' */
 $' . $lcEntity . ' = $db->find($id);
@@ -206,7 +202,7 @@ $' . $lcEntity . ' = $db->find($id);
 if ($request->getMethod() === \'POST\') {
     $this->service->delete' . $entityName . '($' . $lcEntity . ');
     $msg = $this->alertBox(Icon::CHECK_CIRCLE . \' ' . $entityName . ' deleted.\', \'warning\');
-    $form = \'<a href="/' . $lcEntity . '" class="btn btn-default">Back</a>\';
+    $form = \'<a href="/' . $lcEntity . '" class="btn btn-lg btn-default">Back</a>\';
 } else {
     $form = $form->render();
     $msg = $this->alertBox(Icon::WARNING . \' Warning, please confirm your intention to delete.\', \'danger\');
