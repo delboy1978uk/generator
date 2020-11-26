@@ -17,7 +17,7 @@ class ViewPage implements ViewFileGenerator
         $code = <<<EOL
 <?php
 use Del\Icon;
-/** @var \Bone\\{$entityName}\Entity\\{$entityName} \${$name}} */
+/** @var \Bone\\{$entityName}\Entity\\{$entityName} \${$name} */
 ?>
 
 <!-- Content Header (Page header) -->

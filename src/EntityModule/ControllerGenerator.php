@@ -24,9 +24,8 @@ class ControllerGenerator extends FileGenerator
         $moduleNamespace = $nameSpace . '\\' . $entityName;
         $namespace = $file->addNamespace($moduleNamespace . '\\Controller');
 
-        $namespace->addUse($moduleNamespace . '\\Entity\\' . $entityName);
         $namespace->addUse('Bone\Controller\Controller');
-        $namespace->addUse('Bone\View\ViewEngine');
+        $namespace->addUse($moduleNamespace . '\\Entity\\' . $entityName);
         $namespace->addUse('Bone\View\Helper\AlertBox');
         $namespace->addUse('Bone\View\Helper\Paginator');
         $namespace->addUse($moduleNamespace . '\\Collection\\' . $entityName . 'Collection');
@@ -41,7 +40,7 @@ class ControllerGenerator extends FileGenerator
         $namespace->addUse('Laminas\Diactoros\Response\HtmlResponse');
 
         $class = $namespace->addClass($entityName . 'Controller');
-        $class->addExtend('')
+        $class->addExtend('Bone\Controller\Controller');
 
         $property = $class->addProperty('numPerPage');
         $property->addComment('@var int $numPerPage');
@@ -56,17 +55,11 @@ class ControllerGenerator extends FileGenerator
         $property->addComment('@var ' . $entityName . 'Service $service');
         $property->setVisibility('private');
 
-        $property = $class->addProperty('view');
-        $property->addComment('@var ViewEngine $view');
-        $property->setVisibility('private');
-
         // constructor
         $method = $class->addMethod('__construct');
-        $method->addParameter('view')->setTypeHint('Bone\View\ViewEngine');
         $method->addParameter('service')->setTypeHint($nameSpace . '\\' . $entityName . '\\Service\\' . $entityName . 'Service');
         $method->setBody('$this->paginator = new Paginator();
-$this->service = $service;
-$this->view = $view;');
+$this->service = $service;');
         $method->addComment('@param ' . $entityName . 'Service' . ' $service');
 
 
