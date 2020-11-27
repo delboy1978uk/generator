@@ -101,7 +101,7 @@ $c[' . $entityName . 'ApiController::class] = $c->factory(function (Container $c
         $method->addParameter('router')->setTypeHint('Bone\Router\Router');
         $method->setReturnType('Bone\Router\Router');
         $method->setBody('$auth = $c->get(SessionAuth::class);
-$router->group(\'/dog\', function (RouteGroup $route) {
+$router->group(\'/admin/' . $name . '\', function (RouteGroup $route) {
     $route->map(\'GET\', \'/\', [' . $entityName . 'Controller::class, \'index\']);
     $route->map(\'GET\', \'/{id:number}\', [' . $entityName . 'Controller::class, \'view\']);
     $route->map(\'GET\', \'/create\', [' . $entityName . 'Controller::class, \'create\']);

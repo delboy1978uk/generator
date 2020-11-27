@@ -26,6 +26,7 @@ class ControllerGenerator extends FileGenerator
 
         $namespace->addUse('Bone\Controller\Controller');
         $namespace->addUse($moduleNamespace . '\\Entity\\' . $entityName);
+        $namespace->addUse('Bone\Http\Response\LayoutResponse');
         $namespace->addUse('Bone\View\Helper\AlertBox');
         $namespace->addUse('Bone\View\Helper\Paginator');
         $namespace->addUse($moduleNamespace . '\\Collection\\' . $entityName . 'Collection');
@@ -37,7 +38,6 @@ class ControllerGenerator extends FileGenerator
         $namespace->addUse('Del\Icon');
         $namespace->addUse(ResponseInterface::class);
         $namespace->addUse(ServerRequestInterface::class);
-        $namespace->addUse('Laminas\Diactoros\Response\HtmlResponse');
 
         $class = $namespace->addClass($entityName . 'Controller');
         $class->addExtend('Bone\Controller\Controller');
@@ -53,6 +53,11 @@ class ControllerGenerator extends FileGenerator
 
         $property = $class->addProperty('service');
         $property->addComment('@var ' . $entityName . 'Service $service');
+        $property->setVisibility('private');
+
+        $property = $class->addProperty('layout');
+        $property->setValue('layouts::admin');
+        $property->addComment('@var string $layout');
         $property->setVisibility('private');
 
         // constructor
@@ -82,7 +87,7 @@ $body = $this->view->render(\'' . $lcEntity . '::index\', [
     \'paginator\' => $this->paginator->render(),
 ]);
 
-return new HtmlResponse($body);
+return new LayoutResponse($body, $this->layout);
 ');
         $method->addComment('@param ServerRequestInterface $request');
         $method->addComment('@return ResponseInterface $response');
@@ -101,7 +106,7 @@ $body = $this->view->render(\'' . $lcEntity . '::view\', [
     \'' . $lcEntity . '\' => $' . $lcEntity . ',
 ]);
 
-return new HtmlResponse($body);
+return new LayoutResponse($body, $this->layout);
 ');
         $method->addComment('@param ServerRequestInterface $request');
         $method->addComment('@return ResponseInterface $response');
@@ -118,6 +123,7 @@ $form = new ' . $entityName . 'Form(\'create' . $entityName . '\');
 if ($request->getMethod() === \'POST\') {
     $post = $request->getParsedBody();
     $form->populate($post);
+    
     if ($form->isValid()) {
         $data = $form->getValues();
         $' . $lcEntity . ' = $this->service->createFromArray($data);
@@ -129,13 +135,14 @@ if ($request->getMethod() === \'POST\') {
     }
 }
 
+$form->getField(\'submit\')->setValue(\'Create\');
 $form = $form->render();
 $body = $this->view->render(\'' . $lcEntity . '::create\', [
     \'form\' => $form,
     \'msg\' => $msg,
 ]);
 
-return new HtmlResponse($body);');
+return new LayoutResponse($body, $this->layout);');
         $method->addComment('@param ServerRequestInterface $request');
         $method->addComment('@return ResponseInterface $response');
         $method->addComment('@throws \Exception');
@@ -152,6 +159,7 @@ $db = $this->service->getRepository();
 /** @var ' . $entityName . ' $' . $lcEntity . ' */
 $' . $lcEntity . ' = $db->find($id);
 $form->populate($' . $lcEntity . '->toArray());
+$form->getField(\'submit\')->setValue(\'Update\');
 
 if ($request->getMethod() === \'POST\') {
     $post = $request->getParsedBody();
@@ -172,7 +180,7 @@ $body = $this->view->render(\'' . $lcEntity . '::edit\', [
     \'msg\' => $msg,
 ]);
 
-return new HtmlResponse($body);');
+return new LayoutResponse($body, $this->layout);');
         $method->addComment('@param ServerRequestInterface $request');
         $method->addComment('@return ResponseInterface $response');
         $method->addComment('@throws \Exception');
@@ -195,20 +203,22 @@ $' . $lcEntity . ' = $db->find($id);
 if ($request->getMethod() === \'POST\') {
     $this->service->delete' . $entityName . '($' . $lcEntity . ');
     $msg = $this->alertBox(Icon::CHECK_CIRCLE . \' ' . $entityName . ' deleted.\', \'warning\');
-    $form = \'<a href="/' . $lcEntity . '" class="btn btn-lg btn-default">Back</a>\';
+    $form = \'<a href="/admin/' . $lcEntity . '" class="btn btn-lg btn-default">Back</a>\';
+    $text = \'<p class="lead">The record has been deleted from the database.</p>\';
 } else {
     $form = $form->render();
     $msg = $this->alertBox(Icon::WARNING . \' Warning, please confirm your intention to delete.\', \'danger\');
-    $msg .= \'<p class="lead">Are you sure you want to delete \' . $' . $lcEntity . '->getName() . \'?</p>\';
+    $text = \'<p class="lead">Are you sure you want to delete \' . $' . $lcEntity . '->getName() . \'?</p>\';
 }
 
 $body = $this->view->render(\'' . $lcEntity . '::delete\', [
     \'' . $lcEntity . '\' => $' . $lcEntity . ',
     \'form\' => $form,
     \'msg\' => $msg,
+    \'text\' => $text,
 ]);
 
-return new HtmlResponse($body);');
+return new LayoutResponse($body, $this->layout);');
         $method->addComment('@param ServerRequestInterface $request');
         $method->addComment('@return ResponseInterface $response');
         $method->addComment('@throws \Exception');

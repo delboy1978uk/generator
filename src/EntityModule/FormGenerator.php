@@ -10,6 +10,7 @@ use Del\Form\Field\Select;
 use Del\Form\Field\Submit;
 use Del\Form\Field\Text;
 use Del\Form\Field\TextArea;
+use Del\Form\Renderer\HorizontalFormRenderer;
 use Del\Generator\FileGenerator;
 use Laminas\I18n\Validator\IsFloat;
 use Nette\PhpGenerator\ClassType;
@@ -34,6 +35,7 @@ class FormGenerator extends FileGenerator
 
         $namespace->addUse(AbstractForm::class);
         $namespace->addUse(Submit::class);
+        $namespace->addUse(HorizontalFormRenderer::class);
         $this->addElementUseStatements($namespace, $fields);
 
         $class = new ClassType($entityName . 'Form');
@@ -95,7 +97,9 @@ class FormGenerator extends FileGenerator
         }
 
         $body .= '$submit = new Submit(\'submit\');' . "\n";
+        $body .= "\$submit->setClass('btn btn-primary pull-right');\n";
         $body .= '$this->addField($submit);';
+        $body .= "\n\$this->setFormRenderer(new HorizontalFormRenderer());";
 
         return $body;
     }
