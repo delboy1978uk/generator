@@ -135,6 +135,7 @@ class GeneratorCommand extends Command
                     break;
                 case 'checkbox':
                     $field['form']['values']  = [1 => ''];
+                    $askForValues = false;
                     break;
                 case 'file':
                 case 'text':
