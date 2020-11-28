@@ -5,6 +5,7 @@ namespace Del\Generator\EntityModule;
 use Del\Form\AbstractForm;
 use Del\Form\Field\CheckBox;
 use Del\Form\Field\FileUpload;
+use Del\Form\Field\Hidden;
 use Del\Form\Field\Radio;
 use Del\Form\Field\Select;
 use Del\Form\Field\Submit;
@@ -72,6 +73,7 @@ class FormGenerator extends FileGenerator
 
         $formClasses  =  [
             'checkbox' => CheckBox::class,
+            'hidden' => Hidden::class,
             'file' => FileUpload::class,
             'radio' => Radio::class,
             'select' => Select::class,
@@ -157,7 +159,10 @@ class FormGenerator extends FileGenerator
             $body .= $this->setOptions($field['name'], $field['form']['values']);
         }
 
-        $body .= $this->setFieldLabel($field['name'], $field['form']['label']);
+        if (isset($field['form']['label'])) {
+            $label = $field['form']['label'];
+            $body .= $this->setFieldLabel($field['name'], $label);
+        }
 
         if (!$field['nullable']) {
             $body .= '$' . $field['name'] . '->setRequired(true);' . "\n";

@@ -60,7 +60,7 @@ class PackageGenerator extends FileGenerator
 $c[' . $entityName . 'Controller::class] = $c->factory(function (Container $c) {
     $service = $c->get(' . $entityName . 'Service::class);
 
-    return Init::controller(new DogController($service), $c);
+    return Init::controller(new ' . $entityName . 'Controller($service), $c);
 });
 
 $c[' . $entityName . 'ApiController::class] = $c->factory(function (Container $c) {
