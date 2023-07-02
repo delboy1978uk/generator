@@ -22,10 +22,6 @@ if (file_exists('config/bone-db.php')) {
     $config = require_once 'config/bone-db.php';
 }
 
-if (file_exists('migrant-cfg.php')) {
-    $config = require_once 'migrant-cfg.php';
-}
-
 if (empty($config)) {
     echo "No config found.\n";
     echo 'Please add a "db" config, in either config/bone-db.php or migrant-cfg.php';
