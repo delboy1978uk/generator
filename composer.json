@@ -28,5 +28,6 @@
             "Del\\Generator\\": "src"
         }
     },
-    "bin": [ "bin/generator"]
+    "bin": [ "bin/generator"],
+    "abandoned": "boneframework/generator"
 }
